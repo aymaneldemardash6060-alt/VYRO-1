@@ -285,7 +285,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
 
             <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs space-y-2">
               <span className="text-xs text-stone-500 font-bold block">{t('codPendingAmount')}</span>
-              <div className="text-2xl font-black text-amber-600">{formatPrice(codPendingPendingTotal || codPendingTotal)}</div>
+              <div className="text-2xl font-black text-amber-600">{formatPrice(codPendingTotal)}</div>
               <span className="text-[11px] text-stone-400">
                 {language === 'ar' ? 'قيد التحصيل مع مناديب الشحن' : 'In transit with delivery fleet'}
               </span>
@@ -305,5 +305,3 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
     </div>
   );
 };
-
-const codPendingPendingTotal = 0;

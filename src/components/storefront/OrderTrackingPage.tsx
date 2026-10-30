@@ -273,8 +273,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ initialCod
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-xs text-stone-900">
-                          {language === 'ar' ? `طرد رقم #${index + 1}` : `Parcel #${index + 1}`}:{' '}
-                          {subOrder.supplierName}
+                          {language === 'ar' ? `طرد رقم #${index + 1} · شحنة فايرو السريعة` : `Parcel #${index + 1} · Express Courier`}
                         </span>
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${

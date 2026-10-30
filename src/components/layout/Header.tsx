@@ -43,8 +43,8 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span>
               {language === 'ar'
-                ? 'منصة تسوق مستقلة 100% · فحص شامل لكل طلب · دفع عند الاستلام متاح'
-                : '100% Independent Commerce · Verified Fulfillment · Cash on Delivery Available'}
+                ? 'شحن سريع لكافة المحافظات · معاينة وفحص عند الباب · الدفع عند الاستلام متاح'
+                : 'Fast Regional Delivery · Doorstep Inspection · Cash on Delivery Available'}
             </span>
           </div>
 

@@ -170,8 +170,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </span>
                 )}
                 <span className="text-stone-300">·</span>
-                <span className="text-stone-500">
-                  {t('supplierSource')}: {product.supplierName}
+                <span className="text-emerald-700 font-semibold">
+                  {language === 'ar' ? 'منتج أصلي 100% معتمد' : '100% Certified Genuine'}
                 </span>
               </div>
 

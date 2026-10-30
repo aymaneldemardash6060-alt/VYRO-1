@@ -37,8 +37,8 @@ export const HomePage: React.FC<HomePageProps> = ({ products, onNavigate }) => {
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>
                   {language === 'ar'
-                    ? 'بنية تجارة إلكترونية مستقلة ومتعددة الموردين'
-                    : 'Independent Multi-Supplier Architecture'}
+                    ? 'تشكيلة مختارة 2026 · جودة استثنائية معتمدة'
+                    : 'Curated 2026 Collection · Certified Quality'}
                 </span>
               </div>
 
@@ -73,75 +73,62 @@ export const HomePage: React.FC<HomePageProps> = ({ products, onNavigate }) => {
               <div className="pt-6 border-t border-stone-800 grid grid-cols-3 gap-4 text-xs text-stone-400">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{language === 'ar' ? 'دفع عند الباب' : 'COD Available'}</span>
+                  <span>{language === 'ar' ? 'معاينة ودفع عند الباب' : 'Doorstep COD'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{language === 'ar' ? 'فحص جودة صارم' : 'Verified Goods'}</span>
+                  <span>{language === 'ar' ? 'فحص شامل قبل الشحن' : '100% Inspected'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{language === 'ar' ? 'توصيل مباشر' : 'Direct Dispatch'}</span>
+                  <span>{language === 'ar' ? 'استرجاع مجاني 14 يوم' : '14-Day Returns'}</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Hero Visual Feature */}
+            {/* Right Hero: Featured Product Showcase Card */}
             <div className="lg:col-span-5 relative">
-              <div className="relative mx-auto max-w-md bg-stone-800/60 backdrop-blur-md rounded-2xl p-6 border border-stone-700/80 shadow-2xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-stone-700">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span className="text-xs font-bold text-stone-200">
-                      {language === 'ar' ? 'نظام التوجيه الذكي للموردين' : 'Smart Routing Engine'}
-                    </span>
+              <div className="relative mx-auto max-w-md bg-stone-800/80 backdrop-blur-md rounded-2xl p-5 border border-stone-700 shadow-2xl space-y-4">
+                <div className="relative aspect-4/3 rounded-xl overflow-hidden bg-stone-900 border border-stone-700/50">
+                  <img
+                    src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80"
+                    alt="AeroPulse Wireless ANC Headphones"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 start-3 bg-amber-500 text-stone-950 text-[10px] font-black px-2.5 py-1 rounded shadow-md">
+                    {language === 'ar' ? 'الأكثر طلباً' : 'Best Seller'}
                   </div>
-                  <span className="text-[10px] text-stone-400 font-mono">LIVE / AGNOSTIC</span>
-                </div>
-
-                <div className="space-y-3 text-xs">
-                  <div className="p-3 rounded-lg bg-stone-900/80 border border-stone-700/60 flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-white">Taager B2B Network</div>
-                      <div className="text-stone-400 text-[11px]">
-                        {language === 'ar' ? 'إلكترونيات واستهلاكيات' : 'Electronics & Tech'}
-                      </div>
-                    </div>
-                    <span className="text-emerald-400 font-mono text-[11px]">
-                      {language === 'ar' ? 'متصل' : 'Active'}
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-stone-900/80 border border-stone-700/60 flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-white">Cairo Central Hub</div>
-                      <div className="text-stone-400 text-[11px]">
-                        {language === 'ar' ? 'مستودع فايرو المحلي' : 'Internal Warehouse'}
-                      </div>
-                    </div>
-                    <span className="text-emerald-400 font-mono text-[11px]">
-                      {language === 'ar' ? 'طابور فوري' : 'Manual Queue'}
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-stone-900/80 border border-stone-700/60 flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-white">Alexandria Artisan Leather</div>
-                      <div className="text-stone-400 text-[11px]">
-                        {language === 'ar' ? 'تصنيع يدوي محلي' : 'Artisan Workshop'}
-                      </div>
-                    </div>
-                    <span className="text-emerald-400 font-mono text-[11px]">
-                      {language === 'ar' ? 'شحن مباشر' : 'Direct Dispatch'}
-                    </span>
+                  <div className="absolute bottom-3 end-3 bg-stone-950/80 backdrop-blur-xs text-white text-xs font-black px-3 py-1 rounded-lg">
+                    {language === 'ar' ? '1,250 ج.م' : '1,250 EGP'}
                   </div>
                 </div>
 
-                <p className="text-[11px] text-stone-400 italic pt-1 text-center">
-                  {language === 'ar'
-                    ? 'تسوق كعميل واحد وسلة واحدة؛ و فايرو يتولى التنسيق وتوزيع الطرود بسلاسة تامة.'
-                    : 'One unified cart & checkout. VYRO routes line-items to verified suppliers behind the scenes.'}
-                </p>
+                <div className="space-y-1">
+                  <h3 className="font-extrabold text-sm sm:text-base text-white">
+                    {language === 'ar'
+                      ? 'سماعات AeroPulse اللاسلكية بعزل الضوضاء'
+                      : 'AeroPulse Wireless ANC Headphones'}
+                  </h3>
+                  <p className="text-xs text-stone-400 line-clamp-2">
+                    {language === 'ar'
+                      ? 'صوت استثنائي عالي الدقة، بطارية تدوم 40 ساعة، ومقاومة للماء وضمان شامل.'
+                      : 'High-fidelity audio, 40-hour battery, active noise cancellation, and full warranty.'}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-stone-700/60 flex items-center justify-between">
+                  <div className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>{language === 'ar' ? 'متوفر وجاهز للشحن الفوري' : 'Ready for Instant Dispatch'}</span>
+                  </div>
+
+                  <button
+                    onClick={() => onNavigate('catalog')}
+                    className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-stone-100 text-stone-900 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                  >
+                    {language === 'ar' ? 'اطلب الآن' : 'Shop Now'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -160,22 +147,22 @@ export const HomePage: React.FC<HomePageProps> = ({ products, onNavigate }) => {
         onNavigateToCheckout={() => onNavigate('checkout')}
       />
 
-      {/* Mid-Page Value Statement Banner */}
+      {/* Mid-Page Promo Banner (Clean Customer-Facing Offer) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl bg-amber-500 text-stone-950 p-8 sm:p-12 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="rounded-3xl bg-amber-500 text-stone-950 p-8 sm:p-12 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
           <div className="space-y-3 max-w-2xl text-start">
             <div className="inline-block px-3 py-1 bg-stone-950 text-white rounded text-xs font-black tracking-wider uppercase">
-              {language === 'ar' ? 'التجارة المستقلة' : 'Zero Lock-In'}
+              {language === 'ar' ? 'عرض ترويجي خاص' : 'Special Offer'}
             </div>
             <h3 className="text-2xl sm:text-3xl font-black tracking-tight leading-snug">
               {language === 'ar'
-                ? 'استقلال كامل لـ فايرو: لا تحويل خارجي، لا اعتماد حصري، وسداد آمن عند الاستلام'
-                : 'Built Independent: No external redirects, zero supplier lock-in, and reliable COD.'}
+                ? 'خصم 10% على كامل مشترياتك باستخدام كود VYRO10'
+                : 'Get 10% Off Your Entire Order with Code VYRO10'}
             </h3>
             <p className="text-sm font-medium text-stone-900 leading-relaxed">
               {language === 'ar'
-                ? 'حتى في حال تعطل أي مورد خارجي أو انقطاع الـ API، تستمر عمليات فايرو بكفاءة تامة من خلال مستودعاتنا المركزية وطوابير الشحن اليدوية الموازية.'
-                : 'If any external supplier API experiences downtime, VYRO automatically fails over to internal fulfillment queues without disrupting the customer.'}
+                ? 'تسوق براحة وأمان مع خدمة الدفع عند الاستلام، فحص المنتجات عند باب منزلك، واسترجاع مجاني خلال 14 يوماً.'
+                : 'Shop with full confidence: doorstep inspection before payment, Cash on Delivery, and hassle-free returns.'}
             </p>
           </div>
 

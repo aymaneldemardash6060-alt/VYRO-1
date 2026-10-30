@@ -227,7 +227,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
                           <span className="font-semibold text-stone-700">{product.rating}</span>
                         </div>
                         <span aria-hidden="true">·</span>
-                        <span className="truncate">{product.supplierName}</span>
+                        <span className="text-emerald-700 font-medium">{language === 'ar' ? 'ضمان فايرو' : 'VYRO Verified'}</span>
                       </div>
 
                       <h3 className="text-sm font-bold text-stone-900 line-clamp-2 leading-snug group-hover:text-amber-700 transition-colors">

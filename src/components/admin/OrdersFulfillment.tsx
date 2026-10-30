@@ -21,7 +21,7 @@ interface OrdersFulfillmentProps {
 }
 
 export const OrdersFulfillment: React.FC<OrdersFulfillmentProps> = ({
-  orders,
+  orders = [],
   onRefreshOrders
 }) => {
   const { language, formatPrice, t } = useLanguage();
@@ -40,6 +40,23 @@ export const OrdersFulfillment: React.FC<OrdersFulfillmentProps> = ({
 
   // Retrying state
   const [retryingSubOrderId, setRetryingSubOrderId] = useState<string | null>(null);
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateStr;
+    }
+  };
 
   const openDispatchModal = (orderId: string, subOrder: FulfillmentSubOrder) => {
     setModalSubOrder({ orderId, subOrder });
@@ -101,15 +118,22 @@ export const OrdersFulfillment: React.FC<OrdersFulfillmentProps> = ({
     }
   };
 
-  const filteredOrders = orders.filter((o) => {
+  const safeOrders = Array.isArray(orders) ? orders : [];
+
+  const filteredOrders = safeOrders.filter((o) => {
+    if (!o) return false;
     if (selectedStatus !== 'all' && o.status !== selectedStatus) return false;
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
+      const orderNum = (o.orderNumber || '').toLowerCase();
+      const trackCode = (o.trackingCode || '').toLowerCase();
+      const custName = (o.customer?.fullName || '').toLowerCase();
+      const custPhone = o.customer?.phone || '';
       return (
-        o.orderNumber.toLowerCase().includes(q) ||
-        o.trackingCode.toLowerCase().includes(q) ||
-        o.customer.fullName.toLowerCase().includes(q) ||
-        o.customer.phone.includes(q)
+        orderNum.includes(q) ||
+        trackCode.includes(q) ||
+        custName.includes(q) ||
+        custPhone.includes(q)
       );
     }
     return true;
@@ -147,6 +171,7 @@ export const OrdersFulfillment: React.FC<OrdersFulfillmentProps> = ({
         >
           <option value="all">{language === 'ar' ? 'كافة الحالات' : 'All Order Statuses'}</option>
           <option value="pending">Pending</option>
+          <option value="processing">Processing</option>
           <option value="routed">Routed</option>
           <option value="shipped">Shipped</option>
           <option value="delivered">Delivered</option>
@@ -160,181 +185,193 @@ export const OrdersFulfillment: React.FC<OrdersFulfillmentProps> = ({
             {language === 'ar' ? 'لا توجد طلبات مطابقة للبحث' : 'No orders found matching filters'}
           </div>
         ) : (
-          filteredOrders.map((order) => (
-            <div
-              key={order.id}
-              className="bg-white rounded-2xl border border-stone-200 p-6 shadow-xs space-y-6"
-            >
-              {/* Order Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-stone-200 gap-4">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-base font-black text-stone-900">
-                      {order.orderNumber}
-                    </span>
-                    <span
-                      className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                        order.status === 'delivered'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : order.status === 'shipped'
-                          ? 'bg-amber-100 text-amber-900'
-                          : 'bg-stone-100 text-stone-800'
-                      }`}
-                    >
-                      {order.status}
-                    </span>
-                  </div>
-                  <div className="text-xs text-stone-500 mt-1 flex flex-wrap items-center gap-3">
-                    <span>
-                      {new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', {
-                        dateStyle: 'medium',
-                        timeStyle: 'short'
-                      })}
-                    </span>
-                    <span>·</span>
-                    <span>{order.customer.fullName} ({order.customer.phone})</span>
-                    <span>·</span>
-                    <span>{order.shippingAddress.city}, {order.shippingAddress.governorateOrState}</span>
-                  </div>
-                </div>
+          filteredOrders.map((order) => {
+            const subOrders = Array.isArray(order.subOrders) ? order.subOrders : [];
+            const customerName = order.customer?.fullName || 'Customer';
+            const customerPhone = order.customer?.phone || '';
+            const city = order.shippingAddress?.city || '';
+            const gov = order.shippingAddress?.governorateOrState || '';
+            const expectedProfit = order.financialMetrics?.expectedProfit || 0;
 
-                <div className="text-start sm:text-end">
-                  <div className="text-base font-black text-stone-900">
-                    {formatPrice(order.totalAmount)}
-                  </div>
-                  <div className="text-[11px] text-stone-400">
-                    {order.paymentMethod === 'cod' ? t('payCod') : t('payCard')} ·{' '}
-                    <span className="text-emerald-700 font-bold">
-                      +{formatPrice(order.financialMetrics.expectedProfit)} profit
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sub-Orders Multi-Supplier Breakdown */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs font-bold text-stone-700">
-                  <span className="flex items-center gap-1.5">
-                    <Layers className="w-4 h-4 text-amber-600" />
-                    <span>{t('subOrderSplit')} ({order.subOrders.length} {language === 'ar' ? 'طرود' : 'parcels'})</span>
-                  </span>
-                  <span className="text-[11px] text-stone-400 font-normal">
-                    {language === 'ar' ? 'توجيه آلي لكل مورد حسب مصدر الصنف' : 'Independent routing per item source'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {order.subOrders.map((sub, idx) => (
-                    <div
-                      key={sub.id}
-                      className="p-4 rounded-xl border border-stone-200 bg-stone-50/60 flex flex-col justify-between space-y-4"
-                    >
-                      <div className="space-y-3">
-                        {/* Sub-order header */}
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <span className="font-bold text-xs text-stone-900 block">
-                              {sub.supplierName}
-                            </span>
-                            <span className="text-[10px] text-stone-400 font-mono">
-                              Sub-ID: {sub.id}
-                            </span>
-                          </div>
-
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              sub.status === 'delivered'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : sub.status === 'shipped'
-                                ? 'bg-amber-100 text-amber-900'
-                                : sub.status === 'in_manual_queue'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-stone-200 text-stone-700'
-                            }`}
-                          >
-                            {sub.status === 'in_manual_queue' ? t('manualQueueBadge') : sub.status}
-                          </span>
-                        </div>
-
-                        {/* Waybill / Tracking */}
-                        <div className="text-xs space-y-1 bg-white p-2.5 rounded-lg border border-stone-200">
-                          <div className="flex justify-between">
-                            <span className="text-stone-400 text-[10px]">{t('carrier')}:</span>
-                            <span className="font-semibold text-stone-800">
-                              {sub.trackingCarrier || 'Not assigned'}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-stone-400 text-[10px]">{t('externalTracking')}:</span>
-                            <span className="font-mono font-bold text-stone-900">
-                              {sub.trackingNumber || sub.externalOrderId || 'Pending'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Items in this sub-order */}
-                        <div className="space-y-1.5">
-                          <span className="text-[10px] font-bold text-stone-500 uppercase">
-                            {language === 'ar' ? 'أصناف الطرد:' : 'Items in parcel:'}
-                          </span>
-                          {sub.items.map((item) => (
-                            <div
-                              key={item.id}
-                              className="flex items-center justify-between text-xs text-stone-700"
-                            >
-                              <span className="truncate max-w-48">
-                                {item.quantity}× {language === 'ar' ? item.titleAr : item.title}
-                              </span>
-                              <span className="font-mono text-stone-500">{formatPrice(item.totalPrice)}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        {sub.lastError && (
-                          <div className="p-2 rounded bg-rose-50 border border-rose-200 text-[11px] text-rose-700 flex items-start gap-1.5">
-                            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                            <span>{sub.lastError}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Sub-order Actions */}
-                      <div className="pt-3 border-t border-stone-200 flex items-center justify-end gap-2">
-                        {sub.status === 'in_manual_queue' || sub.status === 'pending_submission' ? (
-                          <button
-                            onClick={() => openDispatchModal(order.id, sub)}
-                            className="px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-                          >
-                            <Truck className="w-3 h-3 text-amber-400" />
-                            <span>{t('markShippedBtn')}</span>
-                          </button>
-                        ) : sub.status === 'shipped' ? (
-                          <button
-                            onClick={() => openDispatchModal(order.id, sub)}
-                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-                          >
-                            <CheckCircle2 className="w-3 h-3 text-white" />
-                            <span>{t('markDeliveredBtn')}</span>
-                          </button>
-                        ) : null}
-
-                        {sub.status === 'failed_submission' && (
-                          <button
-                            onClick={() => handleRetrySupplierApi(order.id, sub.id)}
-                            disabled={retryingSubOrderId === sub.id}
-                            className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-                          >
-                            <RefreshCw className="w-3 h-3" />
-                            <span>{t('retrySupplierBtn')}</span>
-                          </button>
-                        )}
-                      </div>
+            return (
+              <div
+                key={order.id}
+                className="bg-white rounded-2xl border border-stone-200 p-6 shadow-xs space-y-6"
+              >
+                {/* Order Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-stone-200 gap-4">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-base font-black text-stone-900">
+                        {order.orderNumber}
+                      </span>
+                      <span
+                        className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                          order.status === 'delivered'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : order.status === 'shipped'
+                            ? 'bg-amber-100 text-amber-900'
+                            : 'bg-stone-100 text-stone-800'
+                        }`}
+                      >
+                        {order.status}
+                      </span>
                     </div>
-                  ))}
+                    <div className="text-xs text-stone-500 mt-1 flex flex-wrap items-center gap-3">
+                      <span>{formatDate(order.createdAt)}</span>
+                      <span>·</span>
+                      <span>{customerName} ({customerPhone})</span>
+                      {city && (
+                        <>
+                          <span>·</span>
+                          <span>{city}, {gov}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-start sm:text-end">
+                    <div className="text-base font-black text-stone-900">
+                      {formatPrice(order.totalAmount || 0)}
+                    </div>
+                    <div className="text-[11px] text-stone-400">
+                      {order.paymentMethod === 'cod' ? t('payCod') : t('payCard')} ·{' '}
+                      <span className="text-emerald-700 font-bold">
+                        +{formatPrice(expectedProfit)} profit
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sub-Orders Multi-Supplier Breakdown */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs font-bold text-stone-700">
+                    <span className="flex items-center gap-1.5">
+                      <Layers className="w-4 h-4 text-amber-600" />
+                      <span>{t('subOrderSplit')} ({subOrders.length} {language === 'ar' ? 'طرود' : 'parcels'})</span>
+                    </span>
+                    <span className="text-[11px] text-stone-400 font-normal">
+                      {language === 'ar' ? 'توجيه آلي لكل مورد حسب مصدر الصنف' : 'Independent routing per item source'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {subOrders.map((sub, idx) => {
+                      const items = Array.isArray(sub.items) ? sub.items : [];
+
+                      return (
+                        <div
+                          key={sub.id || idx}
+                          className="p-4 rounded-xl border border-stone-200 bg-stone-50/60 flex flex-col justify-between space-y-4"
+                        >
+                          <div className="space-y-3">
+                            {/* Sub-order header */}
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <span className="font-bold text-xs text-stone-900 block">
+                                  {sub.supplierName}
+                                </span>
+                                <span className="text-[10px] text-stone-400 font-mono">
+                                  Sub-ID: {sub.id}
+                                </span>
+                              </div>
+
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  sub.status === 'delivered'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : sub.status === 'shipped'
+                                    ? 'bg-amber-100 text-amber-900'
+                                    : sub.status === 'in_manual_queue'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-stone-200 text-stone-700'
+                                }`}
+                              >
+                                {sub.status === 'in_manual_queue' ? t('manualQueueBadge') : sub.status}
+                              </span>
+                            </div>
+
+                            {/* Waybill / Tracking */}
+                            <div className="text-xs space-y-1 bg-white p-2.5 rounded-lg border border-stone-200">
+                              <div className="flex justify-between">
+                                <span className="text-stone-400 text-[10px]">{t('carrier')}:</span>
+                                <span className="font-semibold text-stone-800">
+                                  {sub.trackingCarrier || 'Not assigned'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-stone-400 text-[10px]">{t('externalTracking')}:</span>
+                                <span className="font-mono font-bold text-stone-900">
+                                  {sub.trackingNumber || sub.externalOrderId || 'Pending'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Items in this sub-order */}
+                            <div className="space-y-1.5">
+                              <span className="text-[10px] font-bold text-stone-500 uppercase">
+                                {language === 'ar' ? 'أصناف الطرد:' : 'Items in parcel:'}
+                              </span>
+                              {items.map((item, itemIdx) => (
+                                <div
+                                  key={item.id || itemIdx}
+                                  className="flex items-center justify-between text-xs text-stone-700"
+                                >
+                                  <span className="truncate max-w-48">
+                                    {item.quantity}× {language === 'ar' ? item.titleAr : item.title}
+                                  </span>
+                                  <span className="font-mono text-stone-500">{formatPrice(item.totalPrice || 0)}</span>
+                                </div>
+                              ))}
+                            </div>
+
+                            {sub.lastError && (
+                              <div className="p-2 rounded bg-rose-50 border border-rose-200 text-[11px] text-rose-700 flex items-start gap-1.5">
+                                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                                <span>{sub.lastError}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Sub-order Actions */}
+                          <div className="pt-3 border-t border-stone-200 flex items-center justify-end gap-2">
+                            {sub.status === 'in_manual_queue' || sub.status === 'pending_submission' ? (
+                              <button
+                                onClick={() => openDispatchModal(order.id, sub)}
+                                className="px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                              >
+                                <Truck className="w-3 h-3 text-amber-400" />
+                                <span>{t('markShippedBtn')}</span>
+                              </button>
+                            ) : sub.status === 'shipped' ? (
+                              <button
+                                onClick={() => openDispatchModal(order.id, sub)}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                              >
+                                <CheckCircle2 className="w-3 h-3 text-white" />
+                                <span>{t('markDeliveredBtn')}</span>
+                              </button>
+                            ) : null}
+
+                            {sub.status === 'failed_submission' && (
+                              <button
+                                onClick={() => handleRetrySupplierApi(order.id, sub.id)}
+                                disabled={retryingSubOrderId === sub.id}
+                                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                              >
+                                <RefreshCw className="w-3 h-3" />
+                                <span>{t('retrySupplierBtn')}</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

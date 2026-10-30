@@ -186,17 +186,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
           </div>
         </div>
 
-        {/* Routing transparency notice */}
+        {/* Shipping confirmation notice */}
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 max-w-md mx-auto text-xs text-amber-900 flex items-start gap-2.5 text-start">
-          <Layers className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+          <Truck className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
           <div>
             <span className="font-bold block mb-0.5">
-              {language === 'ar' ? 'توجيه آلي عبر شبكة الموردين' : 'Multi-Supplier Routing Assigned'}
+              {language === 'ar' ? 'تجهيز الشحن السريع' : 'Fast Courier Dispatch'}
             </span>
             <span>
               {language === 'ar'
-                ? `تم توزيع طلبك على ${completedOrder.subOrders.length} طرد للشحن المباشر عبر مستودعاتنا المعتمدة.`
-                : `Your order has been split into ${completedOrder.subOrders.length} fulfillment parcel(s) across verified hubs.`}
+                ? 'تم تسجيل طلبك بنجاح وجاري فحص وتغليف المنتجات للشحن المباشر لباب منزلك مع إمكانية المعاينة.'
+                : 'Your order is verified and being prepared for direct doorstep dispatch with free inspection.'}
             </span>
           </div>
         </div>
@@ -528,17 +528,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
               ))}
             </div>
 
-            {/* Multi-Supplier Disclosure Badge */}
-            <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-xs text-stone-600 space-y-1.5">
-              <div className="font-bold text-stone-800 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-stone-600" />
-                <span>{language === 'ar' ? 'مستودعات التجهيز للطلب' : 'Fulfillment Sources'}</span>
+            {/* Doorstep Inspection & COD Assurance */}
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1">
+              <div className="font-bold flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>{language === 'ar' ? 'معاينة مجانية عند الاستلام' : 'Free Doorstep Inspection'}</span>
               </div>
-              <ul className="text-[11px] text-stone-500 space-y-1 list-disc list-inside">
-                {suppliersInCart.map((s) => (
-                  <li key={s}>{s}</li>
-                ))}
-              </ul>
+              <p className="text-[11px] text-emerald-800 leading-relaxed">
+                {language === 'ar'
+                  ? 'يحق لك معاينة طلبك وفحص كافة القطع مع المندوب قبل دفع أي مبالغ نقدية.'
+                  : 'You have full rights to inspect all items with the courier before paying in cash.'}
+              </p>
             </div>
 
             {/* Cost Breakdown */}

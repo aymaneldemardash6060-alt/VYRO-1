@@ -67,13 +67,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </div>
             <p className="text-xs text-stone-400 leading-relaxed max-w-sm">
               {language === 'ar'
-                ? 'منصة تجارة إلكترونية مستقلة تماماً. تتيح لك التسوق من تشكيلات منتقاة وموثوقة مع ربط مرن ومتعدد الموردين (بما في ذلك تاجر والمستودعات الإقليمية) دون الاعتماد الحصري على أي منصة خارجية.'
-                : 'A fully independent commerce platform connecting verified regional suppliers and proprietary fulfillment hubs under a unified customer-first shopping experience.'}
+                ? 'وجهتك الأولى لتسوق أفضل المنتجات العصرية بأعلى معايير الجودة، مع فحص دقيق قبل الشحن، وتوصيل سريع لباب منزلك، والدفع عند الاستلام.'
+                : 'Your premier destination for verified lifestyle, fashion, and tech products with doorstep Cash on Delivery and hassle-free returns.'}
             </p>
-            <div className="flex items-center gap-2 text-xs text-stone-500">
-              <Layers className="w-4 h-4 text-emerald-400" />
-              <span>Multi-Supplier Provider-Agnostic Core v2.4</span>
-            </div>
           </div>
 
           <div className="md:col-span-2 space-y-3">
@@ -120,19 +116,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
           <div className="md:col-span-3 space-y-3">
             <h5 className="text-xs font-bold text-white uppercase tracking-wider">
-              {language === 'ar' ? 'بوابة الإدارة' : 'System & Operations'}
+              {language === 'ar' ? 'الأمان والضمان' : 'Trust & Safety'}
             </h5>
-            <p className="text-xs text-stone-400">
+            <p className="text-xs text-stone-400 leading-relaxed">
               {language === 'ar'
-                ? 'الوصول للوحة تحكم الموردين، تقارير الأرباح، وفحص استجابة الـ API.'
-                : 'Direct access to the supplier adapter registry, P&L reports, and manual queue dispatch.'}
+                ? 'جميع المنتجات تخضع للفحص المباشر قبل التغليف. يحق لك معاينة طلبك بالكامل والدفع نقداً عند الاستلام دون أي مخاطرة.'
+                : 'Every order is strictly inspected prior to packaging. Inspect your items upon arrival and pay cash at your doorstep.'}
             </p>
-            <button
-              onClick={() => onNavigate('admin')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-stone-900 hover:bg-stone-800 border border-stone-700 text-xs text-stone-200 transition-colors cursor-pointer"
-            >
-              <span>{t('adminPortal')}</span>
-            </button>
+            <div className="pt-1 flex items-center gap-2 text-xs text-emerald-400">
+              <ShieldCheck className="w-4 h-4" />
+              <span>{language === 'ar' ? 'ضمان استرداد أموالك 100%' : '100% Buyer Protection'}</span>
+            </div>
           </div>
         </div>
 
