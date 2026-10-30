@@ -48,7 +48,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           : undefined,
         sku: selectedVariant ? selectedVariant.sku : product.sku,
         price: currentPrice,
-        cost: product.supplierCost,
+        cost: 0,
         image: product.images[0] || '',
         supplierId: product.supplierId,
         supplierName: product.supplierName

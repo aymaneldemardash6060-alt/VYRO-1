@@ -44,12 +44,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
   const [city, setCity] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card'>('cod');
+  const paymentMethod = 'cod' as const;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [checkoutRequestId] = useState(() => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`);
 
   const ArrowIcon = language === 'ar' ? ArrowLeft : ArrowRight;
 
@@ -82,12 +83,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
       // POST to server-side API (which verifies prices against DB)
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': checkoutRequestId },
         body: JSON.stringify({
           customer: {
             fullName: fullName.trim(),
             phone: phone.trim(),
-            email: email.trim() || 'customer@vyro.shop'
+            email: email.trim()
           },
           shippingAddress: {
             fullName: fullName.trim(),
@@ -413,8 +414,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
                     type="radio"
                     name="payment"
                     checked={paymentMethod === 'cod'}
-                    onChange={() => setPaymentMethod('cod')}
-                    className="mt-1 text-stone-900 focus:ring-stone-900 cursor-pointer"
+                    disabled
+                    className="mt-1 cursor-not-allowed text-stone-900 focus:ring-stone-900"
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -430,31 +431,15 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
                   </div>
                 </label>
 
-                {/* Card Payment */}
-                <label
-                  className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                    paymentMethod === 'card'
-                      ? 'border-stone-900 bg-stone-50/80 shadow-xs'
-                      : 'border-stone-200 hover:border-stone-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    checked={paymentMethod === 'card'}
-                    onChange={() => setPaymentMethod('card')}
-                    className="mt-1 text-stone-900 focus:ring-stone-900 cursor-pointer"
-                  />
+                <div aria-disabled="true" className="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 p-4 opacity-60">
+                  <CreditCard className="mt-0.5 h-4 w-4 text-stone-500" />
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-stone-700" />
-                      <span className="text-xs font-bold text-stone-900">{t('payCard')}</span>
-                    </div>
-                    <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">
-                      {t('payCardDesc')}
+                    <span className="text-xs font-bold text-stone-700">{t('payCard')}</span>
+                    <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
+                      {language === 'ar' ? 'غير متاح حاليًا — لم يتم ربط بوابة دفع إلكتروني.' : 'Unavailable — no online payment provider is connected yet.'}
                     </p>
                   </div>
-                </label>
+                </div>
               </div>
             </div>
 
@@ -483,8 +468,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
                 <Lock className="w-3.5 h-3.5" />
                 <span>
                   {language === 'ar'
-                    ? 'حماية كاملة للبيانات · لا يتم تحويلك لأي موقع خارجي'
-                    : 'End-to-end encrypted checkout · Zero 3rd party redirects'}
+                    ? 'الدفع عند الاستلام فقط في الوقت الحالي'
+                    : 'Cash on delivery is the only available payment method'}
                 </span>
               </div>
             </div>

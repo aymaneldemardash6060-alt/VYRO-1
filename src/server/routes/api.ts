@@ -1,69 +1,79 @@
-/**
- * VYRO Commerce — Unified Express API Router
- * 
- * Provides all server-side endpoints for:
- * - Suppliers Management & Adapter Health Checks
- * - Tamper-Proof Order Placement & Tracking
- * - Multi-Supplier Fulfillment Routing
- * - Inventory & Price Synchronization
- * - Financial Settlements & Audit Logs
- */
-
-import { Router, Request, Response } from 'express';
+import { randomUUID } from 'node:crypto';
+import { Router } from 'express';
+import type { Request, Response } from 'express';
 import { db } from '../database.ts';
 import { AdapterRegistry } from '../adapters/AdapterRegistry.ts';
+import { requireAdmin } from '../auth.ts';
 
 export const apiRouter = Router();
 
-// ==========================================
-// 1. SUPPLIERS MANAGEMENT & TEST CONNECTION
-// ==========================================
+apiRouter.use('/suppliers', requireAdmin);
+apiRouter.use('/fulfillment', requireAdmin);
+apiRouter.use('/settlements', requireAdmin);
+apiRouter.use('/logs', requireAdmin);
+apiRouter.use('/stats', requireAdmin);
 
-apiRouter.get('/suppliers', (req: Request, res: Response) => {
+const toPublicProduct = (product: any) => {
+  const {
+    supplierCost: _supplierCost,
+    supplierProductId: _supplierProductId,
+    supplierSku: _supplierSku,
+    ...safeProduct
+  } = product;
+  return {
+    ...safeProduct,
+    variants: (product.variants || []).map((variant: any) => {
+      const { supplierSku: _variantSupplierSku, ...safeVariant } = variant;
+      return safeVariant;
+    })
+  };
+};
+
+const errorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message ? error.message : fallback;
+
+// Suppliers management
+apiRouter.get('/suppliers', async (_req: Request, res: Response) => {
   try {
-    const suppliers = db.getSuppliers();
-    res.json({ success: true, data: suppliers });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.json({ success: true, data: await db.getSuppliers() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: errorMessage(error, 'Could not load suppliers.') });
   }
 });
 
-apiRouter.post('/suppliers', (req: Request, res: Response) => {
+apiRouter.post('/suppliers', async (req: Request, res: Response) => {
   try {
-    const newSupplier = db.createSupplier(req.body);
-    res.status(201).json({ success: true, data: newSupplier });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message });
+    const created = await db.createSupplier(req.body);
+    res.status(201).json({ success: true, data: created });
+  } catch (error) {
+    res.status(400).json({ success: false, error: errorMessage(error, 'Could not create supplier.') });
   }
 });
 
-apiRouter.patch('/suppliers/:id', (req: Request, res: Response) => {
+apiRouter.patch('/suppliers/:id', async (req: Request, res: Response) => {
   try {
-    const updated = db.updateSupplier(req.params.id, req.body);
+    const updated = await db.updateSupplier(req.params.id, req.body);
     res.json({ success: true, data: updated });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message });
+  } catch (error) {
+    res.status(400).json({ success: false, error: errorMessage(error, 'Could not update supplier.') });
   }
 });
 
 apiRouter.post('/suppliers/:id/test', async (req: Request, res: Response) => {
-  const supplierId = req.params.id;
-  const supplier = db.getSupplierById(supplierId);
-
-  if (!supplier) {
-    return res.status(404).json({ success: false, error: `Supplier ${supplierId} not found` });
+  let supplier;
+  try {
+    supplier = await db.getSupplierById(req.params.id);
+  } catch (error) {
+    return res.status(503).json({ success: false, error: errorMessage(error, 'Could not load supplier.') });
   }
-
+  if (!supplier) return res.status(404).json({ success: false, error: 'Supplier not found.' });
   const registry = AdapterRegistry.getInstance();
   const adapter = registry.getAdapter(supplier);
   const startTime = Date.now();
-
   try {
     const result = await adapter.testConnection();
     const durationMs = Date.now() - startTime;
-
-    // Record in database audit logs
-    registry.recordLog({
+    await registry.recordLog({
       supplierId: supplier.id,
       supplierName: supplier.name,
       endpoint: supplier.baseUrl ? `${supplier.baseUrl}/auth/verify` : 'internal://queue',
@@ -72,345 +82,291 @@ apiRouter.post('/suppliers/:id/test', async (req: Request, res: Response) => {
       statusCode: result.statusCode,
       durationMs,
       status: result.success ? 'success' : 'failure',
-      responsePayload: result,
+      responsePayload: undefined,
       errorMessage: result.success ? undefined : result.message
     });
-
-    // Update supplier health in DB
-    db.updateSupplier(supplier.id, {
+    await db.updateSupplier(supplier.id, {
       lastHealthCheckAt: new Date().toISOString(),
       lastHealthStatus: result.success ? 'ok' : 'error',
       lastHealthMessage: `${result.statusCode}: ${result.message}`,
       status: result.success ? 'active' : (supplier.integrationType === 'manual' ? 'active' : 'degraded')
     });
-
-    res.json({ success: true, result });
-  } catch (err: any) {
+    return res.json({ success: true, result });
+  } catch (error) {
     const durationMs = Date.now() - startTime;
-    registry.recordLog({
+    await registry.recordLog({
       supplierId: supplier.id,
       supplierName: supplier.name,
-      endpoint: supplier.baseUrl || 'internal',
+      endpoint: supplier.baseUrl || 'internal://supplier',
       method: 'GET',
       action: 'test_connection',
       statusCode: 500,
       durationMs,
       status: 'failure',
-      errorMessage: err.message
-    });
-
-    db.updateSupplier(supplier.id, {
+      errorMessage: errorMessage(error, 'Connection test failed.')
+    }).catch(() => undefined);
+    await db.updateSupplier(supplier.id, {
       lastHealthCheckAt: new Date().toISOString(),
       lastHealthStatus: 'error',
-      lastHealthMessage: err.message,
+      lastHealthMessage: errorMessage(error, 'Connection test failed.'),
       status: 'disconnected'
-    });
-
-    res.status(500).json({ success: false, error: err.message });
+    }).catch(() => undefined);
+    return res.status(500).json({ success: false, error: errorMessage(error, 'Connection test failed.') });
   }
 });
 
 apiRouter.post('/suppliers/:id/sync', async (req: Request, res: Response) => {
-  const supplier = db.getSupplierById(req.params.id);
-  if (!supplier) {
-    return res.status(404).json({ success: false, error: 'Supplier not found' });
-  }
-
-  const adapter = AdapterRegistry.getInstance().getAdapter(supplier);
   try {
+    const supplier = await db.getSupplierById(req.params.id);
+    if (!supplier) return res.status(404).json({ success: false, error: 'Supplier not found.' });
     if (!supplier.capabilities.supportsProductSync && !supplier.capabilities.supportsInventorySync) {
-      return res.json({ 
-        success: true, 
-        message: 'Manual supplier inventory managed locally in VYRO.',
-        syncedItemsCount: 0
-      });
+      return res.json({ success: true, message: 'Manual supplier inventory is managed locally in VYRO.', syncedItemsCount: 0 });
     }
-
-    // Attempt product fetch
+    const adapter = AdapterRegistry.getInstance().getAdapter(supplier);
     const products = await adapter.fetchProducts({ page: 1, limit: 10 });
-    db.updateSupplier(supplier.id, { lastSyncAt: new Date().toISOString() });
-
-    res.json({
-      success: true,
-      message: `Successfully synchronized ${products.length} products from ${supplier.name}.`,
-      products
-    });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message });
+    await db.updateSupplier(supplier.id, { lastSyncAt: new Date().toISOString() });
+    return res.json({ success: true, message: `Fetched ${products.length} products from ${supplier.name}.`, products });
+  } catch (error) {
+    return res.status(400).json({ success: false, error: errorMessage(error, 'Supplier sync failed.') });
   }
 });
 
-// ==========================================
-// 2. PRODUCT CATALOG (INDEPENDENT)
-// ==========================================
-
-apiRouter.get('/products', (req: Request, res: Response) => {
+// Product catalog: active products are public; inactive products require admin auth.
+apiRouter.get('/products', (req: Request, res: Response, next) => {
+  if (req.query.activeOnly === 'false') return requireAdmin(req, res, next);
+  next();
+}, async (req: Request, res: Response) => {
   try {
     const { category, supplierId, search, activeOnly } = req.query;
-    const products = db.getProducts({
+    const products = await db.getProducts({
       category: category as string,
       supplierId: supplierId as string,
       search: search as string,
-      activeOnly: activeOnly === 'true'
+      activeOnly: activeOnly !== 'false'
     });
-    res.json({ success: true, count: products.length, data: products });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    const data = activeOnly === 'false' ? products : products.map(toPublicProduct);
+    res.json({ success: true, count: products.length, data });
+  } catch (error) {
+    res.status(503).json({ success: false, error: errorMessage(error, 'Could not load products.') });
   }
 });
 
-apiRouter.get('/products/:id', (req: Request, res: Response) => {
-  const product = db.getProductById(req.params.id);
-  if (!product) {
-    return res.status(404).json({ success: false, error: 'Product not found' });
-  }
-  res.json({ success: true, data: product });
-});
-
-apiRouter.post('/products', (req: Request, res: Response) => {
+apiRouter.get('/products/:id', async (req: Request, res: Response) => {
   try {
-    const created = db.createProduct(req.body);
+    const product = await db.getProductById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found.' });
+    return res.json({ success: true, data: toPublicProduct(product) });
+  } catch (error) {
+    return res.status(503).json({ success: false, error: errorMessage(error, 'Could not load product.') });
+  }
+});
+
+apiRouter.post('/products', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const created = await db.createProduct(req.body);
     res.status(201).json({ success: true, data: created });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message });
+  } catch (error) {
+    res.status(400).json({ success: false, error: errorMessage(error, 'Could not create product.') });
   }
 });
 
-apiRouter.patch('/products/:id', (req: Request, res: Response) => {
+apiRouter.patch('/products/:id', requireAdmin, async (req: Request, res: Response) => {
   try {
-    const updated = db.updateProduct(req.params.id, req.body);
+    const updated = await db.updateProduct(req.params.id, req.body);
     res.json({ success: true, data: updated });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message });
+  } catch (error) {
+    res.status(400).json({ success: false, error: errorMessage(error, 'Could not update product.') });
   }
 });
 
-apiRouter.delete('/products/:id', (req: Request, res: Response) => {
-  const deleted = db.deleteProduct(req.params.id);
-  res.json({ success: deleted });
+apiRouter.delete('/products/:id', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const deleted = await db.deleteProduct(req.params.id);
+    res.json({ success: deleted });
+  } catch (error) {
+    res.status(400).json({ success: false, error: errorMessage(error, 'Could not deactivate product.') });
+  }
 });
 
-// ==========================================
-// 3. TAMPER-PROOF ORDERS & ROUTING
-// ==========================================
-
+// Public checkout uses a transaction-safe Supabase RPC; prices and stock are revalidated in Postgres.
 apiRouter.post('/orders', async (req: Request, res: Response) => {
   try {
-    const { customer, shippingAddress, cartItems, paymentMethod, couponCode } = req.body;
-
-    if (!customer || !customer.fullName || !customer.phone) {
-      return res.status(400).json({ success: false, error: 'Customer full name and phone are required.' });
+    const { customer, shippingAddress, cartItems, paymentMethod, couponCode } = req.body || {};
+    if (paymentMethod !== undefined && paymentMethod !== 'cod') {
+      return res.status(400).json({ success: false, error: 'Card payments are not available yet.' });
     }
-
-    if (!shippingAddress || !shippingAddress.city || !shippingAddress.streetAddress) {
+    if (!customer || !String(customer.fullName || '').trim() || String(customer.phone || '').replace(/\D/g, '').length < 10) {
+      return res.status(400).json({ success: false, error: 'Customer name and a valid phone number are required.' });
+    }
+    if (!shippingAddress || !String(shippingAddress.city || '').trim() || !String(shippingAddress.streetAddress || '').trim()) {
       return res.status(400).json({ success: false, error: 'Complete shipping address is required.' });
     }
-
-    if (!Array.isArray(cartItems) || cartItems.length === 0) {
-      return res.status(400).json({ success: false, error: 'Cart must contain at least one item.' });
+    if (!Array.isArray(cartItems) || cartItems.length === 0 || cartItems.length > 100) {
+      return res.status(400).json({ success: false, error: 'Cart must contain between 1 and 100 items.' });
     }
-
-    // Server-side order creation & price recalculation
+    const idempotencyKey = (req.header('Idempotency-Key') || randomUUID()).slice(0, 128);
     const order = await db.createOrder({
-      customer,
+      customer: {
+        fullName: String(customer.fullName).trim(),
+        phone: String(customer.phone).trim(),
+        email: String(customer.email || '').trim()
+      },
       shippingAddress,
       cartItems,
-      paymentMethod: paymentMethod || 'cod',
-      couponCode
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'Order placed and routed successfully.',
-      data: order
-    });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message });
+      paymentMethod: 'cod',
+      couponCode: typeof couponCode === 'string' ? couponCode : undefined
+    }, idempotencyKey);
+    return res.status(201).json({ success: true, message: 'Order placed successfully.', data: order });
+  } catch (error) {
+    const message = errorMessage(error, 'Could not place order.');
+    const clientError = /required|unavailable|stock|quantity|invalid|coupon|product/i.test(message);
+    return res.status(clientError ? 400 : 503).json({ success: false, error: message });
   }
 });
 
-apiRouter.get('/orders', (req: Request, res: Response) => {
+apiRouter.get('/orders', requireAdmin, async (_req: Request, res: Response) => {
   try {
-    const orders = db.getOrders();
-    res.json({ success: true, data: orders });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.json({ success: true, data: await db.getOrders() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: errorMessage(error, 'Could not load orders.') });
   }
 });
 
-apiRouter.get('/orders/track/:code', (req: Request, res: Response) => {
-  const code = req.params.code;
-  const phone = req.query.phone as string | undefined;
-
-  const order = db.getOrderByTracking(code, phone);
-  if (!order) {
-    return res.status(404).json({
-      success: false,
-      error: 'Order not found. Please check your tracking code or phone number.'
-    });
+apiRouter.get('/orders/track/:code', async (req: Request, res: Response) => {
+  const phone = (req.query.phone as string | undefined)?.trim();
+  if (!phone) return res.status(400).json({ success: false, error: 'The phone number used for the order is required.' });
+  try {
+    const order = await db.getOrderByTracking(req.params.code, phone);
+    if (!order) return res.status(404).json({ success: false, error: 'Order not found. Please check your tracking code or phone number.' });
+    return res.json({ success: true, data: order });
+  } catch (error) {
+    return res.status(503).json({ success: false, error: errorMessage(error, 'Could not track this order.') });
   }
-
-  // Mask sensitive customer details for public tracking
-  const sanitized = {
-    ...order,
-    customer: {
-      fullName: order.customer.fullName,
-      phone: `${order.customer.phone.slice(0, 4)}••••${order.customer.phone.slice(-3)}`
-    },
-    financialMetrics: {
-      codCollected: order.financialMetrics.codCollected
-    }
-  };
-
-  res.json({ success: true, data: sanitized });
 });
 
-apiRouter.get('/orders/:id', (req: Request, res: Response) => {
-  const order = db.getOrderById(req.params.id);
-  if (!order) {
-    return res.status(404).json({ success: false, error: 'Order not found' });
+apiRouter.get('/orders/:id', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const order = await db.getOrderById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, error: 'Order not found.' });
+    return res.json({ success: true, data: order });
+  } catch (error) {
+    return res.status(503).json({ success: false, error: errorMessage(error, 'Could not load order.') });
   }
-  res.json({ success: true, data: order });
 });
 
-// ==========================================
-// 4. FULFILLMENT ACTIONS & SUB-ORDER QUEUE
-// ==========================================
-
-apiRouter.post('/fulfillment/sub-orders/:orderId/:subOrderId/status', (req: Request, res: Response) => {
+// Fulfillment status updates and supplier retry actions
+apiRouter.post('/fulfillment/sub-orders/:orderId/:subOrderId/status', async (req: Request, res: Response) => {
   try {
     const { orderId, subOrderId } = req.params;
-    const { status, trackingNumber, carrier } = req.body;
-
-    const updated = db.updateSubOrderStatus(orderId, subOrderId, status, { trackingNumber, carrier });
+    const { status, trackingNumber, carrier, trackingUrl, notes } = req.body;
+    const updated = await db.updateSubOrderStatus(orderId, subOrderId, status, { trackingNumber, carrier, trackingUrl, notes });
     res.json({ success: true, data: updated });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message });
+  } catch (error) {
+    res.status(400).json({ success: false, error: errorMessage(error, 'Could not update fulfillment status.') });
   }
 });
 
 apiRouter.post('/fulfillment/sub-orders/:orderId/:subOrderId/retry', async (req: Request, res: Response) => {
   try {
     const { orderId, subOrderId } = req.params;
-    const order = db.getOrderById(orderId);
-    if (!order) return res.status(404).json({ success: false, error: 'Order not found' });
-
-    const subOrder = order.subOrders.find(s => s.id === subOrderId);
-    if (!subOrder) return res.status(404).json({ success: false, error: 'Sub-order not found' });
-
-    const supplier = db.getSupplierById(subOrder.supplierId);
-    if (!supplier) return res.status(404).json({ success: false, error: 'Supplier not found' });
-
+    const order = await db.getOrderById(orderId);
+    if (!order) return res.status(404).json({ success: false, error: 'Order not found.' });
+    const subOrder = order.subOrders.find((s) => s.id === subOrderId);
+    if (!subOrder) return res.status(404).json({ success: false, error: 'Sub-order not found.' });
+    const supplier = await db.getSupplierById(subOrder.supplierId);
+    if (!supplier) return res.status(404).json({ success: false, error: 'Supplier not found.' });
+    const attempt = subOrder.submissionAttempts + 1;
+    const now = new Date().toISOString();
     const adapter = AdapterRegistry.getInstance().getAdapter(supplier);
-    subOrder.submissionAttempts += 1;
-    subOrder.lastAttemptAt = new Date().toISOString();
-
-    const submissionResult = await adapter.submitOrder({
+    const result = await adapter.submitOrder({
       vyroOrderId: order.orderNumber,
       subOrderId,
-      idempotencyKey: `${subOrder.idempotencyKey}-retry-${subOrder.submissionAttempts}`,
+      idempotencyKey: `${subOrder.idempotencyKey}-retry-${attempt}`,
       shippingAddress: order.shippingAddress,
       customer: order.customer,
       items: subOrder.items,
-      codAmountToCollect: order.paymentMethod === 'cod' ? subOrder.items.reduce((s, i) => s + i.totalPrice, 0) : 0,
+      codAmountToCollect: order.paymentMethod === 'cod' ? subOrder.items.reduce((sum, item) => sum + item.totalPrice, 0) : 0,
       currency: supplier.currency,
       notes: 'Retry submission from VYRO Admin'
     });
-
-    if (submissionResult.success) {
-      subOrder.status = 'submitted';
-      subOrder.externalOrderId = submissionResult.externalOrderId;
-      subOrder.trackingNumber = submissionResult.trackingNumber;
-      subOrder.trackingCarrier = submissionResult.trackingCarrier;
-      subOrder.lastError = undefined;
-    } else {
-      subOrder.lastError = submissionResult.message;
-    }
-
-    res.json({ success: submissionResult.success, result: submissionResult, subOrder });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    const updatedOrder = await db.updateSubOrderStatus(orderId, subOrderId, result.success ? 'submitted' : 'in_manual_queue', {
+      submissionAttempts: attempt,
+      lastAttemptAt: now,
+      externalOrderId: result.externalOrderId,
+      trackingNumber: result.trackingNumber,
+      carrier: result.trackingCarrier,
+      trackingUrl: result.trackingUrl,
+      supplierEstimatedDelivery: result.estimatedDelivery,
+      lastError: result.success ? '' : result.message
+    });
+    const updatedSubOrder = updatedOrder.subOrders.find((s) => s.id === subOrderId);
+    return res.json({ success: result.success, result, subOrder: updatedSubOrder });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: errorMessage(error, 'Could not retry supplier submission.') });
   }
 });
 
-// ==========================================
-// 5. FINANCIAL SETTLEMENTS & REPORTS
-// ==========================================
-
-apiRouter.get('/settlements', (req: Request, res: Response) => {
+// Supplier settlements
+apiRouter.get('/settlements', async (_req: Request, res: Response) => {
   try {
-    const settlements = db.getSettlements();
-    res.json({ success: true, data: settlements });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.json({ success: true, data: await db.getSettlements() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: errorMessage(error, 'Could not load settlements.') });
   }
 });
 
-apiRouter.post('/settlements', (req: Request, res: Response) => {
+apiRouter.post('/settlements', async (req: Request, res: Response) => {
   try {
-    const newSettlement = db.createSettlement(req.body);
-    res.status(201).json({ success: true, data: newSettlement });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message });
+    const created = await db.createSettlement(req.body);
+    res.status(201).json({ success: true, data: created });
+  } catch (error) {
+    res.status(400).json({ success: false, error: errorMessage(error, 'Could not create settlement.') });
   }
 });
 
-apiRouter.patch('/settlements/:id/status', (req: Request, res: Response) => {
+apiRouter.patch('/settlements/:id/status', async (req: Request, res: Response) => {
   try {
-    const { status, referenceNumber } = req.body;
-    const updated = db.updateSettlementStatus(req.params.id, status, referenceNumber);
+    const updated = await db.updateSettlementStatus(req.params.id, req.body?.status, req.body?.referenceNumber);
     res.json({ success: true, data: updated });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message });
+  } catch (error) {
+    res.status(400).json({ success: false, error: errorMessage(error, 'Could not update settlement.') });
   }
 });
 
-// ==========================================
-// 6. INTEGRATION LOGS & AUDIT TRAIL
-// ==========================================
-
-apiRouter.get('/logs', (req: Request, res: Response) => {
+// Redacted integration audit log
+apiRouter.get('/logs', async (req: Request, res: Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 50;
-    const supplierId = req.query.supplierId as string;
-    const logs = db.getLogs(limit, supplierId);
+    const limit = parseInt(req.query.limit as string, 10) || 50;
+    const supplierId = req.query.supplierId as string | undefined;
+    const logs = await db.getLogs(limit, supplierId);
     res.json({ success: true, count: logs.length, data: logs });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+  } catch (error) {
+    res.status(503).json({ success: false, error: errorMessage(error, 'Could not load integration logs.') });
   }
 });
 
-// ==========================================
-// 7. ANALYTICS & SYSTEM STATS
-// ==========================================
-
-apiRouter.get('/stats', (req: Request, res: Response) => {
+// Analytics
+apiRouter.get('/stats', async (_req: Request, res: Response) => {
   try {
-    const orders = db.getOrders();
-    const suppliers = db.getSuppliers();
-    const products = db.getProducts();
-
-    const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
-    const totalSupplierCost = orders.reduce((sum, o) => sum + o.financialMetrics.totalSupplierCost, 0);
-    const expectedProfit = orders.reduce((sum, o) => sum + o.financialMetrics.expectedProfit, 0);
-    const realizedProfit = orders.reduce((sum, o) => sum + o.financialMetrics.realizedProfit, 0);
-
-    const activeSuppliers = suppliers.filter(s => s.status === 'active').length;
-    const degradedSuppliers = suppliers.filter(s => s.status === 'degraded' || s.status === 'disconnected').length;
-
-    // Sub-order distribution
+    const [orders, suppliers, products] = await Promise.all([
+      db.getOrders(),
+      db.getSuppliers(),
+      db.getProducts({ activeOnly: false })
+    ]);
+    const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const totalSupplierCost = orders.reduce((sum, order) => sum + order.financialMetrics.totalSupplierCost, 0);
+    const expectedProfit = orders.reduce((sum, order) => sum + order.financialMetrics.expectedProfit, 0);
+    const realizedProfit = orders.reduce((sum, order) => sum + order.financialMetrics.realizedProfit, 0);
     let queuedSubOrders = 0;
     let submittedSubOrders = 0;
     let deliveredSubOrders = 0;
-
-    orders.forEach(o => {
-      o.subOrders.forEach(s => {
-        if (s.status === 'in_manual_queue' || s.status === 'pending_submission') queuedSubOrders++;
-        else if (s.status === 'submitted' || s.status === 'shipped') submittedSubOrders++;
-        else if (s.status === 'delivered') deliveredSubOrders++;
-      });
-    });
-
+    for (const order of orders) {
+      for (const subOrder of order.subOrders) {
+        if (subOrder.status === 'in_manual_queue' || subOrder.status === 'pending_submission') queuedSubOrders++;
+        else if (subOrder.status === 'submitted' || subOrder.status === 'shipped') submittedSubOrders++;
+        else if (subOrder.status === 'delivered') deliveredSubOrders++;
+      }
+    }
     res.json({
       success: true,
       data: {
@@ -422,16 +378,12 @@ apiRouter.get('/stats', (req: Request, res: Response) => {
         ordersCount: orders.length,
         productsCount: products.length,
         suppliersCount: suppliers.length,
-        activeSuppliers,
-        degradedSuppliers,
-        fulfillmentQueue: {
-          queued: queuedSubOrders,
-          submitted: submittedSubOrders,
-          delivered: deliveredSubOrders
-        }
+        activeSuppliers: suppliers.filter((supplier) => supplier.status === 'active').length,
+        degradedSuppliers: suppliers.filter((supplier) => supplier.status === 'degraded' || supplier.status === 'disconnected').length,
+        fulfillmentQueue: { queued: queuedSubOrders, submitted: submittedSubOrders, delivered: deliveredSubOrders }
       }
     });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+  } catch (error) {
+    res.status(503).json({ success: false, error: errorMessage(error, 'Could not load analytics.') });
   }
 });

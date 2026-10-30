@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { SupplierConfig, Currency } from '../../types/index.ts';
+import { adminFetch } from '../../lib/api.ts';
 import {
   Server,
   Plus,
@@ -47,8 +48,8 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
   const [formCountryCode, setFormCountryCode] = useState('EGY');
   const [formCurrency, setFormCurrency] = useState<Currency>('EGP');
   const [formMarkup, setFormMarkup] = useState(30);
-  const [formAutoSubmit, setFormAutoSubmit] = useState(true);
-  const [formAutoSyncInv, setFormAutoSyncInv] = useState(true);
+  const [formAutoSubmit, setFormAutoSubmit] = useState(false);
+  const [formAutoSyncInv, setFormAutoSyncInv] = useState(false);
   const [formSyncInterval, setFormSyncInterval] = useState(60);
   const [modalSaving, setModalSaving] = useState(false);
 
@@ -81,8 +82,8 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
     setFormCountryCode('EGY');
     setFormCurrency('EGP');
     setFormMarkup(30);
-    setFormAutoSubmit(true);
-    setFormAutoSyncInv(true);
+    setFormAutoSubmit(false);
+    setFormAutoSyncInv(false);
     setFormSyncInterval(60);
   };
 
@@ -91,7 +92,7 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
     setTestResult(null);
 
     try {
-      const res = await fetch(`/api/suppliers/${supplier.id}/test`, { method: 'POST' });
+      const res = await adminFetch(`/api/suppliers/${supplier.id}/test`, { method: 'POST' });
       const data = await res.json();
 
       if (data.success && data.result.success) {
@@ -125,7 +126,7 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
     setSyncResult(null);
 
     try {
-      const res = await fetch(`/api/suppliers/${supplier.id}/sync`, { method: 'POST' });
+      const res = await adminFetch(`/api/suppliers/${supplier.id}/sync`, { method: 'POST' });
       const data = await res.json();
 
       setSyncResult({
@@ -184,13 +185,13 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
           supportsCancellation: true,
           supportsWebhooks: formType === 'api'
         };
-        await fetch('/api/suppliers', {
+        await adminFetch('/api/suppliers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
       } else if (editingSupplier) {
-        await fetch(`/api/suppliers/${editingSupplier.id}`, {
+        await adminFetch(`/api/suppliers/${editingSupplier.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { Product, SupplierConfig, ProductVariant } from '../../types/index.ts';
+import { adminFetch } from '../../lib/api.ts';
 import {
   Plus,
   Search,
@@ -133,13 +134,13 @@ export const ProductsManager: React.FC<ProductsManagerProps> = ({
       };
 
       if (isAdding) {
-        await fetch('/api/products', {
+        await adminFetch('/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
       } else if (editingProduct) {
-        await fetch(`/api/products/${editingProduct.id}`, {
+        await adminFetch(`/api/products/${editingProduct.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -158,7 +159,7 @@ export const ProductsManager: React.FC<ProductsManagerProps> = ({
 
   const toggleProductActive = async (p: Product) => {
     try {
-      await fetch(`/api/products/${p.id}`, {
+      await adminFetch(`/api/products/${p.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !p.isActive })
@@ -172,7 +173,7 @@ export const ProductsManager: React.FC<ProductsManagerProps> = ({
   const handleDelete = async (p: Product) => {
     if (!confirm(`Delete product "${p.title}"?`)) return;
     try {
-      await fetch(`/api/products/${p.id}`, { method: 'DELETE' });
+      await adminFetch(`/api/products/${p.id}`, { method: 'DELETE' });
       onRefreshProducts();
     } catch (err: any) {
       alert(err.message);

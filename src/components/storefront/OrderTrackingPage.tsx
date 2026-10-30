@@ -20,21 +20,22 @@ interface OrderTrackingPageProps {
 
 export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ initialCode = '' }) => {
   const { language, formatPrice, t } = useLanguage();
-  const [trackingCode, setTrackingCode] = useState(initialCode || 'VYRO-EG-98412');
+  const [trackingCode, setTrackingCode] = useState(initialCode);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
   const fetchOrder = async (codeToSearch: string) => {
-    if (!codeToSearch.trim()) return;
+    if (!codeToSearch.trim() || !phoneNumber.trim()) {
+      setSearchError(language === 'ar' ? 'أدخل رقم الهاتف المستخدم عند إنشاء الطلب.' : 'Enter the phone number used when placing the order.');
+      return;
+    }
     setIsLoading(true);
     setSearchError(null);
 
     try {
-      const url = `/api/orders/track/${encodeURIComponent(codeToSearch.trim())}${
-        phoneNumber ? `?phone=${encodeURIComponent(phoneNumber.trim())}` : ''
-      }`;
+      const url = `/api/orders/track/${encodeURIComponent(codeToSearch.trim())}?phone=${encodeURIComponent(phoneNumber.trim())}`;
       const res = await fetch(url);
       const data = await res.json();
 
@@ -52,12 +53,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ initialCod
   };
 
   useEffect(() => {
-    if (initialCode) {
-      fetchOrder(initialCode);
-    } else {
-      // Auto-load default sample
-      fetchOrder('VYRO-EG-98412');
-    }
+    setTrackingCode(initialCode);
   }, [initialCode]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -122,6 +118,19 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ initialCod
               <Search className="w-4 h-4 text-stone-400 absolute top-1/2 -translate-y-1/2 end-3.5" />
             </div>
 
+            <div className="relative flex-1">
+              <input
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                required
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder={language === 'ar' ? 'رقم الهاتف المستخدم في الطلب' : 'Phone number used for the order'}
+                className="w-full px-4 py-3 rounded-xl border border-stone-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-stone-900"
+              />
+            </div>
+
             <button
               type="submit"
               disabled={isLoading}
@@ -131,30 +140,6 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ initialCod
             </button>
           </div>
 
-          {/* Quick Demo Shortcuts */}
-          <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500 pt-1">
-            <span>{language === 'ar' ? 'شحنات تجريبية للمعاينة:' : 'Try sample orders:'}</span>
-            <button
-              type="button"
-              onClick={() => {
-                setTrackingCode('VYRO-EG-98412');
-                fetchOrder('VYRO-EG-98412');
-              }}
-              className="px-2 py-0.5 rounded bg-stone-100 hover:bg-stone-200 text-stone-800 font-mono text-[11px] cursor-pointer"
-            >
-              VYRO-EG-98412 (Multi-Supplier)
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setTrackingCode('VYRO-EG-55201');
-                fetchOrder('VYRO-EG-55201');
-              }}
-              className="px-2 py-0.5 rounded bg-stone-100 hover:bg-stone-200 text-stone-800 font-mono text-[11px] cursor-pointer"
-            >
-              VYRO-EG-55201 (Delivered)
-            </button>
-          </div>
         </form>
       </div>
 
@@ -355,14 +340,10 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ initialCod
               </div>
               <div className="space-y-1 text-stone-600">
                 <p className="font-semibold text-stone-900">{order.shippingAddress.fullName}</p>
-                <p>{order.shippingAddress.streetAddress}</p>
                 <p>
                   {order.shippingAddress.city}, {order.shippingAddress.governorateOrState},{' '}
                   {order.shippingAddress.country}
                 </p>
-                {order.shippingAddress.notes && (
-                  <p className="italic text-stone-400 pt-1">"{order.shippingAddress.notes}"</p>
-                )}
               </div>
             </div>
 

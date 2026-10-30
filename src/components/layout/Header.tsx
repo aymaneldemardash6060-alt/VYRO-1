@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useCart } from '../../context/CartContext.tsx';
+import { useAuth } from '../../context/AuthContext.tsx';
+import { AuthDialog } from '../auth/AuthDialog.tsx';
 import { ViewMode } from '../../types/index.ts';
 import {
   ShoppingBag,
@@ -8,10 +10,11 @@ import {
   Truck,
   ShieldCheck,
   Globe,
-  SlidersHorizontal,
   ChevronDown,
   LayoutDashboard,
-  Store
+  Store,
+  UserRound,
+  LogOut
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -23,14 +26,35 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearch }) => {
   const { language, setLanguage, currency, setCurrency, t } = useLanguage();
   const { itemsCount, setIsCartOpen } = useCart();
+  const { user, isAdmin, signOut, passwordRecoveryPending } = useAuth();
   const [searchInput, setSearchInput] = useState('');
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+
+  useEffect(() => {
+    if (passwordRecoveryPending) {
+      setShowAccountMenu(false);
+      setShowAuthDialog(true);
+    }
+  }, [passwordRecoveryPending]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (onSearch) {
       onSearch(searchInput);
       onNavigate('catalog');
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign-out failed', error);
+    } finally {
+      setShowAccountMenu(false);
+      onNavigate('storefront');
     }
   };
 
@@ -49,7 +73,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Currency Switcher */}
             <div className="relative">
               <button
                 onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
@@ -81,7 +104,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
 
             <span className="text-stone-600">|</span>
 
-            {/* Language Switcher */}
             <div className="flex items-center gap-1.5">
               <Globe className="w-3 h-3 text-stone-400" />
               <button
@@ -98,7 +120,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
       {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          {/* Brand Logo */}
           <div className="flex items-center gap-6">
             <button
               onClick={() => onNavigate('storefront')}
@@ -115,7 +136,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
               </div>
             </button>
 
-            {/* Desktop Navigation Links */}
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-stone-600">
               <button
                 onClick={() => onNavigate('storefront')}
@@ -145,11 +165,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
             </nav>
           </div>
 
-          {/* Search Bar */}
-          <form
-            onSubmit={handleSearchSubmit}
-            className="flex-1 max-w-md hidden sm:block relative"
-          >
+          <form onSubmit={handleSearchSubmit} className="flex-1 max-w-md hidden sm:block relative">
             <div className="relative">
               <input
                 type="text"
@@ -162,32 +178,58 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
             </div>
           </form>
 
-          {/* Right Action Icons */}
-          <div className="flex items-center gap-3">
-            {/* View Switcher: Storefront <-> Admin Portal */}
-            <button
-              onClick={() => onNavigate(currentView === 'admin' ? 'storefront' : 'admin')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                currentView === 'admin'
-                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                  : 'bg-stone-100 text-stone-700 hover:bg-stone-200 border border-stone-200'
-              }`}
-              title={t('adminPortal')}
-            >
-              {currentView === 'admin' ? (
-                <>
-                  <Store className="w-3.5 h-3.5" />
-                  <span>{t('storefront')}</span>
-                </>
-              ) : (
-                <>
-                  <LayoutDashboard className="w-3.5 h-3.5" />
-                  <span>{t('adminPortal')}</span>
-                </>
-              )}
-            </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="relative">
+              <button
+                onClick={() => user ? setShowAccountMenu(!showAccountMenu) : setShowAuthDialog(true)}
+                className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-100 cursor-pointer"
+                aria-label={language === 'ar' ? 'الحساب' : 'Account'}
+                aria-expanded={showAccountMenu}
+              >
+                <UserRound className="w-4 h-4" />
+                <span className="hidden sm:inline">
+                  {user ? (language === 'ar' ? 'حسابي' : 'Account') : (language === 'ar' ? 'دخول' : 'Sign in')}
+                </span>
+              </button>
 
-            {/* Cart Trigger */}
+              {user && showAccountMenu && (
+                <div className="absolute end-0 top-full z-50 mt-2 w-64 rounded-xl border border-stone-200 bg-white p-3 shadow-xl">
+                  <p className="truncate px-2 py-1 text-xs font-semibold text-stone-600">{user.email}</p>
+                  <button
+                    onClick={() => void handleSignOut()}
+                    className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-start text-xs font-bold text-stone-700 transition hover:bg-stone-100 cursor-pointer"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    {language === 'ar' ? 'تسجيل الخروج' : 'Sign out'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {isAdmin && (
+              <button
+                onClick={() => onNavigate(currentView === 'admin' ? 'storefront' : 'admin')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  currentView === 'admin'
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    : 'bg-stone-100 text-stone-700 hover:bg-stone-200 border border-stone-200'
+                }`}
+                title={t('adminPortal')}
+              >
+                {currentView === 'admin' ? (
+                  <>
+                    <Store className="w-3.5 h-3.5" />
+                    <span>{t('storefront')}</span>
+                  </>
+                ) : (
+                  <>
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    <span>{t('adminPortal')}</span>
+                  </>
+                )}
+              </button>
+            )}
+
             <button
               onClick={() => setIsCartOpen(true)}
               className="relative p-2.5 rounded-full text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
@@ -203,7 +245,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
           </div>
         </div>
 
-        {/* Mobile Search Input */}
         <div className="pb-3 sm:hidden">
           <form onSubmit={handleSearchSubmit}>
             <div className="relative">
@@ -219,6 +260,13 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
           </form>
         </div>
       </div>
+
+      {showAuthDialog && (
+        <AuthDialog
+          onClose={() => setShowAuthDialog(false)}
+          initialMode={passwordRecoveryPending ? 'update-password' : 'signin'}
+        />
+      )}
     </header>
   );
 };

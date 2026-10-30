@@ -1,209 +1,99 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
-import { Copy, Check, Database, ShieldCheck, Terminal, Layers } from 'lucide-react';
+import { Check, Copy, Database, ShieldCheck, Terminal, TriangleAlert } from 'lucide-react';
+import sqlSchema from '../../server/migrations.sql?raw';
 
 export const DatabaseMigrationsView: React.FC = () => {
   const { language } = useLanguage();
   const [copied, setCopied] = useState(false);
+  const isArabic = language === 'ar';
 
-  const sqlSchema = `-- ====================================================================
--- VYRO COMMERCE — PRODUCTION DATABASE SCHEMA & SUPABASE MIGRATIONS
--- Multi-Supplier Independent Architecture with Row Level Security (RLS)
--- ====================================================================
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- Enums
-CREATE TYPE supplier_integration_type AS ENUM ('api', 'manual', 'webhook_only');
-CREATE TYPE supplier_connection_status AS ENUM ('active', 'degraded', 'disconnected', 'testing', 'unconfigured');
-CREATE TYPE product_sync_status AS ENUM ('synced', 'drift_detected', 'desynced', 'local_only', 'pending');
-CREATE TYPE vyro_order_status AS ENUM ('pending', 'processing', 'routed', 'submitted_to_supplier', 'supplier_confirmed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned');
-CREATE TYPE fulfillment_suborder_status AS ENUM ('pending_submission', 'submitted', 'in_manual_queue', 'acknowledged', 'processing', 'shipped', 'delivered', 'failed_submission', 'cancelled');
-CREATE TYPE settlement_status AS ENUM ('pending', 'reconciled', 'settled', 'disputed');
-
--- Suppliers Table
-CREATE TABLE suppliers (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    code VARCHAR(64) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    integration_type supplier_integration_type NOT NULL DEFAULT 'manual',
-    base_url TEXT,
-    auth_method VARCHAR(32) NOT NULL DEFAULT 'none',
-    api_key_encrypted TEXT,
-    country_code VARCHAR(3) NOT NULL DEFAULT 'EGY',
-    currency VARCHAR(3) NOT NULL DEFAULT 'EGP',
-    status supplier_connection_status NOT NULL DEFAULT 'unconfigured',
-    capabilities JSONB NOT NULL DEFAULT '{"supportsProductSync": false, "supportsInventorySync": false, "supportsPricingSync": false, "supportsAutoOrderSubmission": false, "supportsTrackingSync": false, "supportsCancellation": false, "supportsWebhooks": false}',
-    settings JSONB NOT NULL DEFAULT '{"autoSubmitOrders": false, "autoSyncInventory": false, "autoSyncPricing": false, "syncIntervalMinutes": 60, "stockThreshold": 2, "markupPercentage": 30, "settlementCycleDays": 14, "codFeePercent": 2.0}',
-    contact_email VARCHAR(255),
-    contact_phone VARCHAR(64),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Products Table
-CREATE TABLE products (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    sku VARCHAR(64) UNIQUE NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    title_ar VARCHAR(255) NOT NULL,
-    description TEXT,
-    description_ar TEXT,
-    category VARCHAR(64) NOT NULL,
-    category_ar VARCHAR(64) NOT NULL,
-    images TEXT[] NOT NULL DEFAULT '{}',
-    selling_price NUMERIC(12, 2) NOT NULL CHECK (selling_price >= 0),
-    supplier_cost NUMERIC(12, 2) NOT NULL CHECK (supplier_cost >= 0),
-    currency VARCHAR(3) NOT NULL DEFAULT 'EGP',
-    supplier_id UUID NOT NULL REFERENCES suppliers(id) ON DELETE RESTRICT,
-    supplier_product_id VARCHAR(128),
-    supplier_sku VARCHAR(128),
-    stock_quantity INTEGER NOT NULL DEFAULT 0,
-    sync_status product_sync_status NOT NULL DEFAULT 'local_only',
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Orders Table
-CREATE TABLE orders (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    order_number VARCHAR(64) UNIQUE NOT NULL,
-    tracking_code VARCHAR(64) UNIQUE NOT NULL,
-    customer_name VARCHAR(255) NOT NULL,
-    customer_phone VARCHAR(32) NOT NULL,
-    customer_email VARCHAR(255),
-    shipping_country VARCHAR(64) NOT NULL,
-    shipping_governorate VARCHAR(64) NOT NULL,
-    shipping_city VARCHAR(64) NOT NULL,
-    shipping_address_line TEXT NOT NULL,
-    currency VARCHAR(3) NOT NULL DEFAULT 'EGP',
-    subtotal NUMERIC(12, 2) NOT NULL,
-    shipping_fee NUMERIC(12, 2) NOT NULL DEFAULT 0,
-    discount NUMERIC(12, 2) NOT NULL DEFAULT 0,
-    cod_fee NUMERIC(12, 2) NOT NULL DEFAULT 0,
-    total_amount NUMERIC(12, 2) NOT NULL,
-    payment_method VARCHAR(16) NOT NULL DEFAULT 'cod',
-    status vyro_order_status NOT NULL DEFAULT 'pending',
-    total_selling_price NUMERIC(12, 2) NOT NULL,
-    total_supplier_cost NUMERIC(12, 2) NOT NULL,
-    expected_profit NUMERIC(12, 2) NOT NULL,
-    realized_profit NUMERIC(12, 2) NOT NULL DEFAULT 0,
-    cod_collected BOOLEAN NOT NULL DEFAULT false,
-    settlement_status settlement_status NOT NULL DEFAULT 'pending',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Fulfillment Sub-Orders (Multi-Supplier Split Routing)
-CREATE TABLE fulfillment_suborders (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-    supplier_id UUID NOT NULL REFERENCES suppliers(id),
-    status fulfillment_suborder_status NOT NULL DEFAULT 'pending_submission',
-    external_order_id VARCHAR(128),
-    tracking_number VARCHAR(128),
-    tracking_carrier VARCHAR(128),
-    subtotal_cost NUMERIC(12, 2) NOT NULL,
-    shipping_cost NUMERIC(12, 2) NOT NULL DEFAULT 0,
-    idempotency_key VARCHAR(128) UNIQUE NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Row Level Security (RLS)
-ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE fulfillment_suborders ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Public storefront can read active products"
-    ON products FOR SELECT USING (is_active = true);
-
-CREATE POLICY "Admins have full access to all resources"
-    ON orders FOR ALL TO authenticated
-    USING (auth.jwt() ->> 'role' = 'admin');`;
-
-  const copySql = () => {
-    navigator.clipboard.writeText(sqlSchema);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const copySql = async () => {
+    try {
+      await navigator.clipboard.writeText(sqlSchema);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-200">
+      <div className="flex flex-col gap-4 border-b border-stone-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-stone-900">
-            {language === 'ar' ? 'مخطط قواعد البيانات و Supabase' : 'Database Schema & Supabase Migrations'}
+          <h2 className="text-xl font-black text-stone-900 sm:text-2xl">
+            {isArabic ? 'مخطط قاعدة البيانات وSupabase' : 'Database Schema & Supabase Migrations'}
           </h2>
-          <p className="text-xs text-stone-500 mt-1 max-w-2xl leading-relaxed">
-            {language === 'ar'
-              ? 'مخطط قاعدة بيانات PostgreSQL المتوافق مع Supabase، متضمناً سياسات أمان مستوى الصف (RLS) ومفاتيح الربط التلقائي للموردين.'
-              : 'PostgreSQL schema with Supabase Row Level Security (RLS) and multi-supplier relational integrity.'}
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-stone-500">
+            {isArabic
+              ? 'معاينة ملف SQL المصدري لقاعدة PostgreSQL وسياسات RLS.'
+              : 'Preview the source SQL schema and its PostgreSQL Row Level Security policies.'}
           </p>
         </div>
-
         <button
-          onClick={copySql}
-          className="px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm self-start sm:self-auto"
+          onClick={() => void copySql()}
+          className="flex cursor-pointer items-center gap-2 self-start rounded-xl bg-stone-900 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-stone-800 sm:self-auto"
         >
-          {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-          <span>{copied ? (language === 'ar' ? 'تم نسخ الـ SQL!' : 'Copied!') : (language === 'ar' ? 'نسخ كود الميجريشن' : 'Copy SQL Schema')}</span>
+          {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+          <span>{copied ? (isArabic ? 'تم النسخ' : 'Copied') : (isArabic ? 'نسخ ملف SQL' : 'Copy SQL')}</span>
         </button>
       </div>
 
-      {/* Env Vars Checklist Card */}
-      <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4">
-        <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-amber-600" />
-          <span>{language === 'ar' ? 'المتغيرات البيئية الموصى بها (Environment Variables)' : 'Recommended Environment Setup'}</span>
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
-          <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 space-y-1">
-            <span className="font-bold text-stone-800">PORT=3000</span>
-            <p className="font-sans text-[11px] text-stone-500">
-              {language === 'ar' ? 'المنفذ الافتراضي لخادم Express & Vite' : 'Port for Express & Vite full-stack server'}
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 space-y-1">
-            <span className="font-bold text-stone-800">TAAGER_API_TOKEN</span>
-            <p className="font-sans text-[11px] text-stone-500">
-              {language === 'ar' ? 'مفتاح الـ Bearer للربط مع دروب شيبنج تاجر' : 'Bearer token for live Taager B2B sync'}
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 space-y-1">
-            <span className="font-bold text-stone-800">SUPABASE_URL</span>
-            <p className="font-sans text-[11px] text-stone-500">
-              {language === 'ar' ? 'رابط مشروع Supabase في بيئة الإنتاج' : 'Target Supabase project URL'}
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 space-y-1">
-            <span className="font-bold text-stone-800">SUPABASE_SERVICE_ROLE_KEY</span>
-            <p className="font-sans text-[11px] text-stone-500">
-              {language === 'ar' ? 'مفتاح الصلاحيات الكاملة على مستوى الخادم فقط' : 'Server-side key with bypass RLS capability'}
-            </p>
-          </div>
+      <div className="flex gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950">
+        <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+        <div className="space-y-1">
+          <h3 className="text-sm font-black">
+            {isArabic ? 'مهم: طبقة البيانات متصلة عبر Supabase' : 'Supabase persistence is implemented'}
+          </h3>
+          <p className="text-xs leading-relaxed">
+            {isArabic
+              ? 'المنتجات والطلبات والموردون والسجلات والتسويات تُقرأ وتُكتب عبر Supabase. يجب تطبيق ملف SQL مرة واحدة على مشروع vyro، ثم ضبط متغيرات البيئة في Vercel قبل النشر.'
+              : 'Products, orders, suppliers, logs, and settlements now use Supabase persistence. Apply this SQL once to the vyro project, then configure the Vercel environment variables before deployment.'}
+          </p>
         </div>
       </div>
 
-      {/* SQL Migration Code Block */}
-      <div className="bg-stone-950 rounded-2xl border border-stone-800 overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-stone-800 flex items-center justify-between text-xs text-stone-400">
+      <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-xs">
+        <h3 className="flex items-center gap-2 text-sm font-bold text-stone-900">
+          <Terminal className="h-4 w-4 text-amber-600" />
+          <span>{isArabic ? 'متغيرات البيئة المطلوبة للمصادقة والبيانات' : 'Environment variables for auth and persistence'}</span>
+        </h3>
+        <div className="grid grid-cols-1 gap-3 text-xs md:grid-cols-2">
+          {[
+            ['VITE_SUPABASE_URL', isArabic ? 'رابط المشروع المستخدم في الواجهة.' : 'Project URL used by the browser client.'],
+            ['VITE_SUPABASE_PUBLISHABLE_KEY', isArabic ? 'المفتاح العام للنشر والمصادقة في الواجهة.' : 'Publishable key used by the browser client.'],
+            ['SUPABASE_URL', isArabic ? 'رابط المشروع الذي يتحقق منه الخادم.' : 'Project URL used by server-side token verification.'],
+            ['SUPABASE_PUBLISHABLE_KEY', isArabic ? 'المفتاح العام الذي يستخدمه الخادم للتحقق من الجلسة.' : 'Publishable key used by the server to verify sessions.'],
+            ['SUPABASE_SERVICE_ROLE_KEY', isArabic ? 'مفتاح سري للخادم فقط لعمليات لوحة الإدارة وقاعدة البيانات.' : 'Server-only secret for admin data access; never expose to the browser.'],
+            ['SUPPLIER_CREDENTIALS_ENCRYPTION_KEY', isArabic ? 'مفتاح خادمي اختياري عند حفظ أسرار الموردين.' : 'Optional server-only encryption key for supplier credentials.']
+          ].map(([name, description]) => (
+            <div key={name} className="space-y-1 rounded-xl border border-stone-200 bg-stone-50 p-3">
+              <span className="font-mono font-bold text-stone-800">{name}</span>
+              <p className="text-[11px] leading-relaxed text-stone-500">{description}</p>
+            </div>
+          ))}
+        </div>
+        <p className="flex items-start gap-2 text-[11px] leading-relaxed text-stone-600">
+          <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-700" />
+          <span>
+            {isArabic
+              ? 'لا تضع SUPABASE_SERVICE_ROLE_KEY أو مفتاح تشفير الموردين في VITE_* أو ملفات المصدر أو GitHub. أضفهما في متغيرات البيئة الخادمية في Vercel فقط.'
+              : 'Never put SUPABASE_SERVICE_ROLE_KEY or the supplier encryption key in VITE_* variables, source files, or GitHub. Add them only as server environment variables in Vercel.'}
+          </span>
+        </p>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-stone-800 bg-stone-950 shadow-xl">
+        <div className="flex items-center justify-between border-b border-stone-800 p-4 text-xs text-stone-400">
           <div className="flex items-center gap-2 font-mono">
-            <Database className="w-4 h-4 text-emerald-400" />
+            <Database className="h-4 w-4 text-emerald-400" />
             <span>src/server/migrations.sql</span>
           </div>
-          <span className="font-mono text-emerald-400">PostgreSQL 15+ / Supabase</span>
+          <span className="font-mono text-emerald-400">PostgreSQL / Supabase</span>
         </div>
-
-        <div className="p-6 overflow-x-auto max-h-[600px] overflow-y-auto">
-          <pre className="text-xs font-mono text-stone-300 leading-relaxed">
-            {sqlSchema}
-          </pre>
+        <div className="max-h-[600px] overflow-auto p-6">
+          <pre className="whitespace-pre-wrap text-xs leading-relaxed text-stone-300">{sqlSchema}</pre>
         </div>
       </div>
     </div>

@@ -76,7 +76,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           : undefined,
         sku: defaultVariant ? defaultVariant.sku : product.sku,
         price: product.sellingPrice + (defaultVariant?.priceDelta || 0),
-        cost: product.supplierCost,
+        cost: 0,
         image: product.images[0] || '',
         supplierId: product.supplierId,
         supplierName: product.supplierName

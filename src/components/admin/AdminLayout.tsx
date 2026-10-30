@@ -28,6 +28,7 @@ import { OrdersFulfillment } from './OrdersFulfillment.tsx';
 import { FinancialReports } from './FinancialReports.tsx';
 import { IntegrationLogs } from './IntegrationLogs.tsx';
 import { DatabaseMigrationsView } from './DatabaseMigrationsView.tsx';
+import { adminFetch } from '../../lib/api.ts';
 
 interface AdminLayoutProps {
   onNavigateToStore: () => void;
@@ -52,11 +53,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const fetchAllData = async () => {
     try {
       const [supRes, prodRes, ordRes, logRes, setRes] = await Promise.all([
-        fetch('/api/suppliers').then((r) => r.json()),
-        fetch('/api/products').then((r) => r.json()),
-        fetch('/api/orders').then((r) => r.json()),
-        fetch('/api/logs?limit=50').then((r) => r.json()),
-        fetch('/api/settlements').then((r) => r.json())
+        adminFetch('/api/suppliers').then((r) => r.json()),
+        adminFetch('/api/products?activeOnly=false').then((r) => r.json()),
+        adminFetch('/api/orders').then((r) => r.json()),
+        adminFetch('/api/logs?limit=50').then((r) => r.json()),
+        adminFetch('/api/settlements').then((r) => r.json())
       ]);
 
       if (supRes.success) setSuppliers(supRes.data);

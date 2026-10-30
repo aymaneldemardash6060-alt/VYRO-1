@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { Order, SupplierSettlement, SupplierConfig } from '../../types/index.ts';
+import { adminFetch } from '../../lib/api.ts';
 import {
   DollarSign,
   TrendingUp,
@@ -59,7 +60,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
     if (!ref) return;
 
     try {
-      const res = await fetch(`/api/settlements/${settlementId}/status`, {
+      const res = await adminFetch(`/api/settlements/${settlementId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'settled', referenceNumber: ref })

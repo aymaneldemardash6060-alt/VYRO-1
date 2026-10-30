@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { Order, FulfillmentSubOrder } from '../../types/index.ts';
+import { adminFetch } from '../../lib/api.ts';
 import {
   Layers,
   Truck,
@@ -71,7 +72,7 @@ export const OrdersFulfillment: React.FC<OrdersFulfillmentProps> = ({
     setModalUpdating(true);
 
     try {
-      const res = await fetch(
+      const res = await adminFetch(
         `/api/fulfillment/sub-orders/${modalSubOrder.orderId}/${modalSubOrder.subOrder.id}/status`,
         {
           method: 'POST',
@@ -101,7 +102,7 @@ export const OrdersFulfillment: React.FC<OrdersFulfillmentProps> = ({
   const handleRetrySupplierApi = async (orderId: string, subOrderId: string) => {
     setRetryingSubOrderId(subOrderId);
     try {
-      const res = await fetch(`/api/fulfillment/sub-orders/${orderId}/${subOrderId}/retry`, {
+      const res = await adminFetch(`/api/fulfillment/sub-orders/${orderId}/${subOrderId}/retry`, {
         method: 'POST'
       });
       const data = await res.json();

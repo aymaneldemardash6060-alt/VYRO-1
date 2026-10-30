@@ -15,7 +15,7 @@ import { SupplierConfig, IntegrationLog } from '../types.ts';
 export class AdapterRegistry {
   private static instance: AdapterRegistry;
   private adapters: Map<string, SupplierAdapter> = new Map();
-  private logSubscriber?: (log: IntegrationLog) => void;
+  private logSubscriber?: (log: IntegrationLog) => Promise<void> | void;
 
   private constructor() {}
 
@@ -26,7 +26,7 @@ export class AdapterRegistry {
     return AdapterRegistry.instance;
   }
 
-  public setLogSubscriber(subscriber: (log: IntegrationLog) => void): void {
+  public setLogSubscriber(subscriber: (log: IntegrationLog) => Promise<void> | void): void {
     this.logSubscriber = subscriber;
   }
 
@@ -54,7 +54,7 @@ export class AdapterRegistry {
     return this.register(supplier);
   }
 
-  public recordLog(log: Omit<IntegrationLog, 'id' | 'timestamp'>): void {
+  public async recordLog(log: Omit<IntegrationLog, 'id' | 'timestamp'>): Promise<void> {
     const completeLog: IntegrationLog = {
       id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       timestamp: new Date().toISOString(),
@@ -62,7 +62,7 @@ export class AdapterRegistry {
     };
 
     if (this.logSubscriber) {
-      this.logSubscriber(completeLog);
+      await this.logSubscriber(completeLog);
     }
   }
 }
