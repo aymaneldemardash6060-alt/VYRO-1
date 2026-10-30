@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Product, ProductVariant } from '../../types/index.ts';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useCart } from '../../context/CartContext.tsx';
-import { X, Check, ShieldCheck, Truck, Star, Sparkles } from 'lucide-react';
+import { X, Check, ShieldCheck, Truck, Star, Sparkles, Minus, Plus } from 'lucide-react';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -26,6 +26,20 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   );
   const [quantity, setQuantity] = useState(1);
   const [addedToast, setAddedToast] = useState(false);
+
+  // Lock page scroll behind the modal and close on Escape
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [onClose]);
 
   const title = language === 'ar' ? product.titleAr : product.title;
   const description = language === 'ar' ? product.descriptionAr : product.description;
@@ -68,12 +82,24 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="relative bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden border border-stone-200 animate-in fade-in zoom-in-95 duration-200">
+    <div
+      className="vyro-backdrop fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-stone-950/60 p-3 backdrop-blur-xs sm:items-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="animate-in zoom-in-95 relative my-auto w-full max-w-4xl overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl duration-200"
+      >
         {/* Close Button */}
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 end-4 z-10 p-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors cursor-pointer"
+          aria-label={language === 'ar' ? 'إغلاق' : 'Close'}
+          className="absolute end-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-stone-600 shadow-sm ring-1 ring-stone-900/5 backdrop-blur-sm transition-colors hover:bg-stone-100 hover:text-stone-950 cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -96,18 +122,20 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
             {/* Thumbnail selector */}
             {product.images.length > 1 && (
-              <div className="flex items-center gap-2 mt-4">
+              <div className="scrollbar-none mt-4 flex items-center gap-2 overflow-x-auto pb-1">
                 {product.images.map((img, idx) => (
                   <button
                     key={idx}
+                    type="button"
+                    aria-label={`${title} ${idx + 1}`}
                     onClick={() => setSelectedImage(img)}
-                    className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
+                    className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 transition-all cursor-pointer ${
                       selectedImage === img
                         ? 'border-stone-900 shadow-sm'
                         : 'border-stone-200 opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
+                    <img src={img} alt="" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -128,8 +156,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           {/* Product Details & Actions */}
           <div className="p-6 md:p-8 flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between text-xs text-stone-500 mb-2">
-                <span>{category}</span>
+              <div className="mb-2 flex items-center justify-between gap-3 pe-12 text-xs text-stone-500 md:pe-10">
+                <span className="truncate">{category}</span>
                 <div className="flex items-center gap-1 text-amber-500">
                   <Star className="w-3.5 h-3.5 fill-current" />
                   <span className="font-semibold text-stone-800">{product.rating}</span>
@@ -152,7 +180,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
 
               {/* Stock status indicator */}
-              <div className="mt-3 flex items-center gap-2 text-xs">
+              <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                 {currentStock > 10 ? (
                   <span className="text-emerald-700 font-medium flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
@@ -192,8 +220,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       return (
                         <button
                           key={variant.id}
+                          type="button"
+                          aria-pressed={isSelected}
                           onClick={() => setSelectedVariant(variant)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-2 ${
+                          className={`flex min-h-10 items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-medium transition-all cursor-pointer ${
                             isSelected
                               ? 'border-stone-900 bg-stone-900 text-white shadow-xs'
                               : 'border-stone-200 bg-stone-50 text-stone-700 hover:border-stone-400'
@@ -223,19 +253,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 <span className="text-xs font-bold text-stone-700">
                   {language === 'ar' ? 'الكمية:' : 'Quantity:'}
                 </span>
-                <div className="flex items-center border border-stone-300 rounded-lg overflow-hidden bg-white">
+                <div className="flex items-center overflow-hidden rounded-xl border border-stone-300 bg-white">
                   <button
+                    type="button"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-1 hover:bg-stone-100 text-stone-700 font-bold transition-colors cursor-pointer"
+                    aria-label={language === 'ar' ? 'تقليل الكمية' : 'Decrease quantity'}
+                    className="flex h-10 w-10 items-center justify-center text-stone-700 transition-colors hover:bg-stone-100 cursor-pointer"
                   >
-                    -
+                    <Minus className="h-4 w-4" />
                   </button>
-                  <span className="px-4 py-1 text-xs font-bold text-stone-900">{quantity}</span>
+                  <span className="min-w-10 text-center text-sm font-bold tabular-nums text-stone-900">{quantity}</span>
                   <button
+                    type="button"
                     onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
-                    className="px-3 py-1 hover:bg-stone-100 text-stone-700 font-bold transition-colors cursor-pointer"
+                    aria-label={language === 'ar' ? 'زيادة الكمية' : 'Increase quantity'}
+                    className="flex h-10 w-10 items-center justify-center text-stone-700 transition-colors hover:bg-stone-100 cursor-pointer"
                   >
-                    +
+                    <Plus className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -243,14 +277,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
             {/* Actions Bar */}
             <div className="mt-8 pt-6 border-t border-stone-200 space-y-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-3 min-[420px]:flex-row">
                 <button
+                  type="button"
                   onClick={handleAddToCart}
                   disabled={currentStock <= 0}
-                  className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-colors ${
                     currentStock <= 0
-                      ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
-                      : 'bg-stone-900 hover:bg-stone-800 text-white shadow-sm'
+                      ? 'cursor-not-allowed bg-stone-200 text-stone-400'
+                      : 'cursor-pointer bg-stone-950 text-white shadow-sm hover:bg-stone-800'
                   }`}
                 >
                   {addedToast ? (
@@ -264,15 +299,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleBuyNow}
                   disabled={currentStock <= 0}
-                  className="py-3 px-5 rounded-xl text-xs sm:text-sm font-bold bg-amber-500 hover:bg-amber-600 text-stone-950 transition-all cursor-pointer shadow-xs"
+                  className="h-12 rounded-xl bg-amber-500 px-6 text-sm font-extrabold text-stone-950 shadow-xs transition-colors hover:bg-amber-400 cursor-pointer disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
                 >
                   {t('buyNow')}
                 </button>
               </div>
 
-              <div className="flex items-center justify-center gap-4 text-[11px] text-stone-500 pt-1">
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-1 text-xs text-stone-500">
                 <div className="flex items-center gap-1">
                   <Truck className="w-3.5 h-3.5 text-stone-400" />
                   <span>{language === 'ar' ? 'شحن سريع لباب بيتك' : 'Fast Courier Dispatch'}</span>

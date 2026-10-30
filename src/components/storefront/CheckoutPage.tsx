@@ -255,7 +255,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="mb-1.5 block text-sm font-semibold text-stone-700">
                     {t('fullName')} *
                   </label>
                   <input
@@ -264,12 +264,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder={t('fullNamePlaceholder')}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900"
+                    className="h-12 w-full rounded-xl border border-stone-300 bg-white px-3.5 text-base text-stone-900 placeholder:text-stone-400 transition-[border-color,box-shadow] hover:border-stone-400 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10 sm:h-11 sm:text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="mb-1.5 block text-sm font-semibold text-stone-700">
                     {t('phone')} *
                   </label>
                   <input
@@ -278,12 +278,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder={t('phonePlaceholder')}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900"
+                    className="h-12 w-full rounded-xl border border-stone-300 bg-white px-3.5 text-base text-stone-900 placeholder:text-stone-400 transition-[border-color,box-shadow] hover:border-stone-400 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10 sm:h-11 sm:text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="mb-1.5 block text-sm font-semibold text-stone-700">
                     {t('secondaryPhone')}
                   </label>
                   <input
@@ -291,12 +291,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
                     value={secondaryPhone}
                     onChange={(e) => setSecondaryPhone(e.target.value)}
                     placeholder="011XXXXXXXX"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900"
+                    className="h-12 w-full rounded-xl border border-stone-300 bg-white px-3.5 text-base text-stone-900 placeholder:text-stone-400 transition-[border-color,box-shadow] hover:border-stone-400 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10 sm:h-11 sm:text-sm"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="mb-1.5 block text-sm font-semibold text-stone-700">
                     {t('email')}
                   </label>
                   <input
@@ -304,7 +304,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t('emailPlaceholder')}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900"
+                    className="h-12 w-full rounded-xl border border-stone-300 bg-white px-3.5 text-base text-stone-900 placeholder:text-stone-400 transition-[border-color,box-shadow] hover:border-stone-400 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10 sm:h-11 sm:text-sm"
                   />
                 </div>
               </div>
@@ -321,13 +321,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="mb-1.5 block text-sm font-semibold text-stone-700">
                     {t('country')} *
                   </label>
                   <select
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900 bg-white cursor-pointer"
+                    className="h-12 w-full rounded-xl border border-stone-300 bg-white px-3.5 text-base text-stone-900 placeholder:text-stone-400 transition-[border-color,box-shadow] hover:border-stone-400 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10 sm:h-11 sm:text-sm cursor-pointer"
                   >
                     <option value="Egypt">مصر (Egypt)</option>
                     <option value="Saudi Arabia">المملكة العربية السعودية (KSA)</option>
@@ -336,7 +336,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="mb-1.5 block text-sm font-semibold text-stone-700">
                     {t('governorate')} *
                   </label>
                   <input
@@ -345,12 +345,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
                     value={governorate}
                     onChange={(e) => setGovernorate(e.target.value)}
                     placeholder="Cairo / Giza / Alexandria"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900"
+                    className="h-12 w-full rounded-xl border border-stone-300 bg-white px-3.5 text-base text-stone-900 placeholder:text-stone-400 transition-[border-color,box-shadow] hover:border-stone-400 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10 sm:h-11 sm:text-sm"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="mb-1.5 block text-sm font-semibold text-stone-700">
                     {t('city')} *
                   </label>
                   <input
@@ -359,12 +359,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="New Cairo, Nasr City, Mohandessin..."
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900"
+                    className="h-12 w-full rounded-xl border border-stone-300 bg-white px-3.5 text-base text-stone-900 placeholder:text-stone-400 transition-[border-color,box-shadow] hover:border-stone-400 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10 sm:h-11 sm:text-sm"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="mb-1.5 block text-sm font-semibold text-stone-700">
                     {t('streetAddress')} *
                   </label>
                   <textarea
@@ -373,12 +373,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
                     value={streetAddress}
                     onChange={(e) => setStreetAddress(e.target.value)}
                     placeholder="Building name/number, street name, apartment or villa..."
-                    className="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900"
+                    className="min-h-24 w-full resize-y rounded-xl border border-stone-300 bg-white px-3.5 py-3 text-base leading-relaxed text-stone-900 placeholder:text-stone-400 transition-[border-color,box-shadow] hover:border-stone-400 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10 sm:text-sm"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  <label className="mb-1.5 block text-sm font-semibold text-stone-700">
                     {t('deliveryNotes')}
                   </label>
                   <input
@@ -386,7 +386,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
                     value={deliveryNotes}
                     onChange={(e) => setDeliveryNotes(e.target.value)}
                     placeholder={t('deliveryNotesPlaceholder')}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900"
+                    className="h-12 w-full rounded-xl border border-stone-300 bg-white px-3.5 text-base text-stone-900 placeholder:text-stone-400 transition-[border-color,box-shadow] hover:border-stone-400 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10 sm:h-11 sm:text-sm"
                   />
                 </div>
               </div>
@@ -484,7 +484,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onNavigate, onOrderC
             </h3>
 
             {/* Items list */}
-            <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-80 overflow-y-auto pe-1">
               {cart.map((item) => (
                 <div
                   key={`${item.productId}-${item.variantId || 'def'}`}

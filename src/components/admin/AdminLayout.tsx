@@ -89,7 +89,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   return (
     <div className="min-h-screen bg-stone-100/70 text-stone-900 pb-16">
       {/* Admin Top Bar */}
-      <div className="bg-stone-950 text-white border-b border-stone-800 sticky top-16 z-30">
+      <div className="bg-stone-950 text-white border-b border-stone-800 md:sticky md:top-16 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 gap-4">
             <div className="flex items-center gap-3">
@@ -106,8 +106,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               <button
                 onClick={fetchAllData}
                 disabled={isLoading}
-                className="p-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-300 transition-colors cursor-pointer"
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-stone-900 text-stone-300 transition-colors hover:bg-stone-800 cursor-pointer disabled:opacity-60"
                 title="Refresh All"
+                aria-label="Refresh All"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               </button>

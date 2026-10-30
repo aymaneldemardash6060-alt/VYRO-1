@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useCart } from '../../context/CartContext.tsx';
 import { ViewMode } from '../../types/index.ts';
-import { X, Trash2, ArrowRight, ArrowLeft, ShieldCheck, Tag } from 'lucide-react';
+import { X, Trash2, ArrowRight, ArrowLeft, ShieldCheck, Tag, ShoppingBag, Minus, Plus } from 'lucide-react';
 
 interface CartDrawerProps {
   onNavigateToCheckout: () => void;
@@ -35,6 +35,21 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('');
 
+  // Lock page scroll behind the drawer and close on Escape
+  useEffect(() => {
+    if (!isCartOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsCartOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isCartOpen, setIsCartOpen]);
+
   if (!isCartOpen) return null;
 
   const handleApplyCoupon = (e: React.FormEvent) => {
@@ -52,33 +67,46 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const ArrowIcon = language === 'ar' ? ArrowLeft : ArrowRight;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-end">
-      <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-end duration-300">
+    <div
+      className="vyro-backdrop fixed inset-0 z-50 flex justify-end overflow-hidden bg-stone-950/55 backdrop-blur-xs"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) setIsCartOpen(false);
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('cartTitle')}
+        className="animate-in slide-in-from-end flex h-dvh w-full max-w-md flex-col bg-white shadow-2xl duration-300"
+      >
         {/* Drawer Header */}
-        <div className="p-4 sm:p-6 border-b border-stone-200 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center justify-between border-b border-stone-200 px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <ShoppingBag className="h-5 w-5 text-stone-700" />
             <h3 className="text-base sm:text-lg font-extrabold text-stone-900">
               {t('cartTitle')}
             </h3>
-            <span className="text-xs bg-stone-100 text-stone-700 font-bold px-2 py-0.5 rounded-full">
+            <span className="min-w-6 rounded-full bg-stone-950 px-2 py-0.5 text-center text-xs font-bold text-white">
               {itemsCount}
             </span>
           </div>
 
           <button
+            type="button"
             onClick={() => setIsCartOpen(false)}
-            className="p-2 rounded-full hover:bg-stone-100 text-stone-500 hover:text-stone-800 transition-colors cursor-pointer"
+            aria-label={language === 'ar' ? 'إغلاق السلة' : 'Close cart'}
+            className="-me-2 flex h-10 w-10 items-center justify-center rounded-full text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Drawer Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-6">
           {cart.length === 0 ? (
-            <div className="text-center py-20 space-y-4">
-              <div className="w-16 h-16 rounded-full bg-stone-100 text-stone-400 mx-auto flex items-center justify-center">
-                <Tag className="w-8 h-8" />
+            <div className="flex h-full flex-col items-center justify-center space-y-4 py-16 text-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-stone-100 text-stone-400">
+                <ShoppingBag className="h-9 w-9" />
               </div>
               <p className="text-sm font-bold text-stone-800">{t('cartEmpty')}</p>
               <p className="text-xs text-stone-500 max-w-xs mx-auto">{t('cartEmptySub')}</p>
@@ -87,7 +115,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   setIsCartOpen(false);
                   onExploreProducts();
                 }}
-                className="mt-2 px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all cursor-pointer"
+                className="mt-2 h-11 rounded-xl bg-stone-950 px-6 text-sm font-bold text-white transition-colors hover:bg-stone-800 cursor-pointer"
               >
                 {t('startShopping')}
               </button>
@@ -97,51 +125,57 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               {cart.map((item) => (
                 <div
                   key={`${item.productId}-${item.variantId || 'def'}`}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-stone-50/50"
+                  className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-3 shadow-xs"
                 >
                   <img
                     src={item.image}
                     alt={language === 'ar' ? item.titleAr : item.title}
-                    className="w-16 h-16 rounded-lg object-cover bg-white border border-stone-200 shrink-0"
+                    className="h-20 w-20 shrink-0 rounded-xl border border-stone-200 bg-stone-100 object-cover"
                   />
 
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-stone-900 truncate">
+                    <h4 className="truncate text-sm font-bold text-stone-900">
                       {language === 'ar' ? item.titleAr : item.title}
                     </h4>
 
                     {item.variantTitle && (
-                      <p className="text-[11px] text-stone-500 mt-0.5">{item.variantTitle}</p>
+                      <p className="mt-0.5 truncate text-xs text-stone-500">{item.variantTitle}</p>
                     )}
 
-                    <div className="text-xs font-black text-stone-950 mt-1">
+                    <div className="mt-1 text-sm font-black text-stone-950">
                       {formatPrice(item.price)}
                     </div>
 
                     <div className="flex items-center justify-between mt-2">
                       {/* Quantity Stepper */}
-                      <div className="flex items-center border border-stone-300 rounded bg-white">
+                      <div className="flex items-center overflow-hidden rounded-lg border border-stone-300 bg-white">
                         <button
+                          type="button"
                           onClick={() => updateQuantity(item.productId, item.variantId, -1)}
-                          className="px-2 py-0.5 text-xs text-stone-600 hover:bg-stone-100 font-bold"
+                          aria-label={language === 'ar' ? 'تقليل الكمية' : 'Decrease quantity'}
+                          className="flex h-8 w-8 items-center justify-center text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-950 cursor-pointer"
                         >
-                          -
+                          <Minus className="h-3.5 w-3.5" />
                         </button>
-                        <span className="px-2.5 py-0.5 text-xs font-bold text-stone-900">
+                        <span className="min-w-8 text-center text-sm font-bold tabular-nums text-stone-900">
                           {item.quantity}
                         </span>
                         <button
+                          type="button"
                           onClick={() => updateQuantity(item.productId, item.variantId, 1)}
-                          className="px-2 py-0.5 text-xs text-stone-600 hover:bg-stone-100 font-bold"
+                          aria-label={language === 'ar' ? 'زيادة الكمية' : 'Increase quantity'}
+                          className="flex h-8 w-8 items-center justify-center text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-950 cursor-pointer"
                         >
-                          +
+                          <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
 
                       <button
+                        type="button"
                         onClick={() => removeFromCart(item.productId, item.variantId)}
-                        className="text-stone-400 hover:text-rose-600 transition-colors cursor-pointer p-1"
-                        title="Remove"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-400 transition-colors hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
+                        title={language === 'ar' ? 'حذف من السلة' : 'Remove from cart'}
+                        aria-label={language === 'ar' ? 'حذف من السلة' : 'Remove from cart'}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -173,17 +207,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         value={inputCoupon}
                         onChange={(e) => setInputCoupon(e.target.value)}
                         placeholder={t('couponPlaceholder')}
-                        className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-xs text-stone-800 uppercase focus:outline-none focus:ring-1 focus:ring-stone-900"
+                        className="h-10 min-w-0 flex-1 rounded-lg border border-stone-300 bg-white px-3 text-sm uppercase text-stone-800 placeholder:normal-case placeholder:text-stone-400 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10"
                       />
                       <button
                         type="submit"
-                        className="px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all cursor-pointer"
+                        className="h-10 shrink-0 rounded-lg bg-stone-950 px-4 text-sm font-bold text-white transition-colors hover:bg-stone-800 cursor-pointer"
                       >
                         {t('applyCoupon')}
                       </button>
                     </div>
-                    {couponError && <p className="text-[11px] text-rose-600">{couponError}</p>}
-                    {couponSuccess && <p className="text-[11px] text-emerald-600">{couponSuccess}</p>}
+                    {couponError && <p role="alert" className="text-xs text-rose-600">{couponError}</p>}
+                    {couponSuccess && <p role="status" className="text-xs text-emerald-600">{couponSuccess}</p>}
                   </form>
                 )}
               </div>
@@ -193,8 +227,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
         {/* Drawer Footer / Checkout CTA */}
         {cart.length > 0 && (
-          <div className="p-4 sm:p-6 border-t border-stone-200 bg-stone-50 space-y-3">
-            <div className="space-y-1.5 text-xs text-stone-600">
+          <div className="shrink-0 space-y-3 border-t border-stone-200 bg-stone-50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6 sm:pb-6">
+            <div className="space-y-2 text-sm text-stone-600">
               <div className="flex items-center justify-between">
                 <span>{t('subtotal')}</span>
                 <span className="font-semibold text-stone-900">{formatPrice(subtotal)}</span>
@@ -228,13 +262,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 setIsCartOpen(false);
                 onNavigateToCheckout();
               }}
-              className="w-full py-3.5 px-4 rounded-xl bg-stone-950 hover:bg-stone-800 text-white text-xs sm:text-sm font-extrabold transition-all duration-200 shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-stone-950 px-4 text-sm font-extrabold text-white shadow-md transition-colors duration-200 hover:bg-stone-800 cursor-pointer"
             >
               <span>{t('proceedToCheckout')}</span>
               <ArrowIcon className="w-4 h-4" />
             </button>
 
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-stone-500 pt-1">
+            <div className="flex items-center justify-center gap-1.5 pt-1 text-xs text-stone-500">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
               <span>
                 {language === 'ar'

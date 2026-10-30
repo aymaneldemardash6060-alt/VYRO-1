@@ -103,7 +103,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ initialCod
       </div>
 
       {/* Search Bar Card */}
-      <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-xs max-w-2xl mx-auto">
+      <div className="mx-auto max-w-2xl rounded-2xl border border-stone-200 bg-white p-5 shadow-xs sm:p-6">
         <form onSubmit={handleSearchSubmit} className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
@@ -113,7 +113,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ initialCod
                 value={trackingCode}
                 onChange={(e) => setTrackingCode(e.target.value)}
                 placeholder={t('trackCodeInputPlaceholder')}
-                className="w-full px-4 py-3 rounded-xl border border-stone-300 text-xs sm:text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-stone-900"
+                className="h-12 w-full rounded-xl border border-stone-300 bg-white px-4 text-base text-stone-900 placeholder:text-stone-400 transition-[border-color,box-shadow] hover:border-stone-400 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10 sm:text-sm pe-11 font-mono uppercase placeholder:font-sans placeholder:normal-case"
               />
               <Search className="w-4 h-4 text-stone-400 absolute top-1/2 -translate-y-1/2 end-3.5" />
             </div>
@@ -127,14 +127,14 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ initialCod
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder={language === 'ar' ? 'رقم الهاتف المستخدم في الطلب' : 'Phone number used for the order'}
-                className="w-full px-4 py-3 rounded-xl border border-stone-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-stone-900"
+                className="h-12 w-full rounded-xl border border-stone-300 bg-white px-4 text-base text-stone-900 placeholder:text-stone-400 transition-[border-color,box-shadow] hover:border-stone-400 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10 sm:text-sm"
               />
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs sm:text-sm transition-all cursor-pointer shrink-0"
+              className="h-12 shrink-0 rounded-xl bg-stone-950 px-6 text-sm font-bold text-white transition-colors hover:bg-stone-800 disabled:cursor-wait disabled:opacity-60 cursor-pointer"
             >
               {isLoading ? t('loading') : t('searchOrderBtn')}
             </button>
@@ -144,7 +144,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({ initialCod
       </div>
 
       {searchError && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-3 max-w-2xl mx-auto">
+        <div role="alert" className="mx-auto flex max-w-2xl items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
           <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
           <span>{searchError}</span>
         </div>

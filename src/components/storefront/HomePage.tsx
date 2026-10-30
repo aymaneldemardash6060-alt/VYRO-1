@@ -23,7 +23,7 @@ export const HomePage: React.FC<HomePageProps> = ({ products, onNavigate }) => {
   const ArrowIcon = language === 'ar' ? ArrowLeft : ArrowRight;
 
   return (
-    <div className="space-y-12 pb-16">
+    <div className="pb-16">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-stone-900 text-white py-16 lg:py-24 border-b border-stone-800">
         {/* Subtle geometric pattern overlay */}
@@ -54,7 +54,7 @@ export const HomePage: React.FC<HomePageProps> = ({ products, onNavigate }) => {
               <div className="flex flex-wrap items-center gap-4 pt-2">
                 <button
                   onClick={() => onNavigate('catalog')}
-                  className="px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold text-sm transition-all duration-200 shadow-lg shadow-amber-500/20 flex items-center gap-2 cursor-pointer"
+                  className="flex h-12 items-center gap-2 rounded-xl bg-amber-500 px-6 text-sm font-extrabold text-stone-950 shadow-lg shadow-amber-500/20 transition-all duration-200 hover:bg-amber-400 cursor-pointer"
                 >
                   <span>{t('heroCta')}</span>
                   <ArrowIcon className="w-4 h-4" />
@@ -62,7 +62,7 @@ export const HomePage: React.FC<HomePageProps> = ({ products, onNavigate }) => {
 
                 <button
                   onClick={() => onNavigate('order_tracking')}
-                  className="px-6 py-3.5 rounded-xl bg-stone-800/80 hover:bg-stone-800 text-stone-200 border border-stone-700 font-bold text-sm transition-all duration-200 flex items-center gap-2 cursor-pointer"
+                  className="flex h-12 items-center gap-2 rounded-xl border border-stone-700 bg-stone-800/80 px-6 text-sm font-bold text-stone-200 transition-all duration-200 hover:bg-stone-800 cursor-pointer"
                 >
                   <Truck className="w-4 h-4 text-stone-400" />
                   <span>{t('heroTrackCta')}</span>
@@ -70,7 +70,7 @@ export const HomePage: React.FC<HomePageProps> = ({ products, onNavigate }) => {
               </div>
 
               {/* Quick Trust Badges */}
-              <div className="pt-6 border-t border-stone-800 grid grid-cols-3 gap-4 text-xs text-stone-400">
+              <div className="grid grid-cols-1 gap-3 border-t border-stone-800 pt-6 text-xs text-stone-300 min-[480px]:grid-cols-3 sm:gap-4">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>{language === 'ar' ? 'معاينة ودفع عند الباب' : 'Doorstep COD'}</span>
@@ -93,7 +93,11 @@ export const HomePage: React.FC<HomePageProps> = ({ products, onNavigate }) => {
                   <img
                     src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80"
                     alt="AeroPulse Wireless ANC Headphones"
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover"
+                    loading="eager"
+                    onError={(event) => {
+                      event.currentTarget.style.visibility = 'hidden';
+                    }}
                   />
                   <div className="absolute top-3 start-3 bg-amber-500 text-stone-950 text-[10px] font-black px-2.5 py-1 rounded shadow-md">
                     {language === 'ar' ? 'الأكثر طلباً' : 'Best Seller'}
@@ -148,7 +152,7 @@ export const HomePage: React.FC<HomePageProps> = ({ products, onNavigate }) => {
       />
 
       {/* Mid-Page Promo Banner (Clean Customer-Facing Offer) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl bg-amber-500 text-stone-950 p-8 sm:p-12 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
           <div className="space-y-3 max-w-2xl text-start">
             <div className="inline-block px-3 py-1 bg-stone-950 text-white rounded text-xs font-black tracking-wider uppercase">
@@ -168,7 +172,7 @@ export const HomePage: React.FC<HomePageProps> = ({ products, onNavigate }) => {
 
           <button
             onClick={() => onNavigate('catalog')}
-            className="px-6 py-3.5 bg-stone-950 hover:bg-stone-800 text-white font-extrabold text-sm rounded-xl transition-all cursor-pointer shadow-md shrink-0"
+            className="h-12 w-full shrink-0 rounded-xl bg-stone-950 px-6 text-sm font-extrabold text-white shadow-md transition-all hover:bg-stone-800 cursor-pointer md:w-auto"
           >
             {t('navCatalog')}
           </button>

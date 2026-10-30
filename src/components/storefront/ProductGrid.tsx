@@ -94,7 +94,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold leading-tight text-stone-900 tracking-tight">
               {title || t('allProductsTitle')}
             </h2>
             {subtitle && <p className="text-sm text-stone-500 mt-1">{subtitle}</p>}
@@ -103,12 +103,13 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           {/* Sort & Supplier Filters */}
           <div className="flex flex-wrap items-center gap-3">
             {/* Supplier Filter */}
-            <div className="flex items-center gap-1.5 text-xs bg-white border border-stone-200 rounded-lg px-2.5 py-1.5 shadow-xs">
-              <Filter className="w-3.5 h-3.5 text-stone-400" />
+            <div className="flex h-10 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-sm shadow-xs transition-colors focus-within:border-stone-900 focus-within:ring-4 focus-within:ring-stone-900/10 hover:border-stone-300">
+              <Filter className="h-4 w-4 shrink-0 text-stone-400" />
               <select
                 value={selectedSupplier}
                 onChange={(e) => setSelectedSupplier(e.target.value)}
-                className="bg-transparent text-stone-700 font-medium focus:outline-none cursor-pointer"
+                aria-label={language === 'ar' ? 'تصفية حسب المورد' : 'Filter by supplier'}
+                className="max-w-44 cursor-pointer truncate bg-transparent font-medium text-stone-700 focus:outline-none"
               >
                 <option value="all">
                   {language === 'ar' ? 'كافة المستودعات والموردين' : 'All Suppliers'}
@@ -125,7 +126,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="text-xs bg-white border border-stone-200 rounded-lg px-3 py-1.5 font-medium text-stone-700 shadow-xs focus:outline-none cursor-pointer"
+              aria-label={language === 'ar' ? 'ترتيب المنتجات' : 'Sort products'}
+              className="h-10 cursor-pointer rounded-xl border border-stone-200 bg-white px-3 text-sm font-medium text-stone-700 shadow-xs transition-colors hover:border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-900/10"
             >
               <option value="featured">{t('sortFeatured')}</option>
               <option value="price_asc">{t('sortPriceAsc')}</option>
@@ -136,18 +138,20 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         </div>
 
         {/* Category Segmented Tabs (Compliant with frontend-design anti-slop) */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-4 mb-6 border-b border-stone-200 scrollbar-none">
+        <div className="scrollbar-none -mx-4 mb-6 flex items-center gap-2 overflow-x-auto border-b border-stone-200 px-4 pb-4 sm:mx-0 sm:px-0">
           {categories.map((cat) => {
             const isActive = activeCategory === cat.key;
             const label = language === 'ar' ? cat.labelAr : cat.labelEn;
             return (
               <button
                 key={cat.key}
+                type="button"
+                aria-pressed={isActive}
                 onClick={() => setActiveCategory(cat.key)}
-                className={`px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                className={`h-10 shrink-0 whitespace-nowrap rounded-full px-5 text-sm font-semibold transition-colors cursor-pointer ${
                   isActive
-                    ? 'bg-stone-900 text-white shadow-xs'
-                    : 'bg-white hover:bg-stone-100 text-stone-600 border border-stone-200'
+                    ? 'bg-stone-950 text-white shadow-xs'
+                    : 'border border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:bg-stone-100 hover:text-stone-900'
                 }`}
               >
                 {label}
@@ -202,7 +206,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
                       )}
 
                       {/* Quick View Floating Button */}
-                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -251,12 +255,14 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
 
                     <button
                       onClick={(e) => handleQuickAdd(product, e)}
-                      className={`p-2.5 rounded-xl transition-all cursor-pointer ${
+                      type="button"
+                      className={`flex h-11 w-11 items-center justify-center rounded-xl transition-all cursor-pointer ${
                         isJustAdded
                           ? 'bg-emerald-600 text-white scale-105'
                           : 'bg-stone-100 hover:bg-stone-900 hover:text-white text-stone-800'
                       }`}
                       title={t('addToCart')}
+                      aria-label={t('addToCart')}
                     >
                       {isJustAdded ? (
                         <Check className="w-4 h-4" />

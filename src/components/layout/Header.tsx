@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useCart } from '../../context/CartContext.tsx';
 import { useAuth } from '../../context/AuthContext.tsx';
@@ -14,7 +14,8 @@ import {
   LayoutDashboard,
   Store,
   UserRound,
-  LogOut
+  LogOut,
+  Check
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -31,6 +32,33 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const currencyRef = useRef<HTMLDivElement>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
+  const closeAuthDialog = useCallback(() => setShowAuthDialog(false), []);
+
+  // Close the small dropdowns when clicking elsewhere or pressing Escape
+  useEffect(() => {
+    if (!showCurrencyDropdown && !showAccountMenu) return;
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (showCurrencyDropdown && !currencyRef.current?.contains(target)) setShowCurrencyDropdown(false);
+      if (showAccountMenu && !accountRef.current?.contains(target)) setShowAccountMenu(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowCurrencyDropdown(false);
+        setShowAccountMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('touchstart', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('touchstart', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [showCurrencyDropdown, showAccountMenu]);
 
   useEffect(() => {
     if (passwordRecoveryPending) {
@@ -58,61 +86,77 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
     }
   };
 
+  // -top-9 lets the 36px promo strip scroll away while the navbar stays pinned
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200">
+    <header className="sticky -top-9 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200">
       {/* Top Banner: Independence & Delivery Assurance */}
-      <div className="bg-stone-900 text-stone-200 text-xs py-1.5 px-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>
+      <div className="bg-stone-950 text-stone-300 text-xs">
+        <div className="max-w-7xl mx-auto flex h-9 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-2">
+            <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+            <span className="truncate sm:hidden">
+              {language === 'ar' ? 'الدفع عند الاستلام · معاينة عند الباب' : 'Cash on Delivery · Doorstep Inspection'}
+            </span>
+            <span className="hidden truncate sm:inline">
               {language === 'ar'
                 ? 'شحن سريع لكافة المحافظات · معاينة وفحص عند الباب · الدفع عند الاستلام متاح'
                 : 'Fast Regional Delivery · Doorstep Inspection · Cash on Delivery Available'}
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="relative">
+          <div className="flex shrink-0 items-center gap-1">
+            <div className="relative" ref={currencyRef}>
               <button
+                type="button"
                 onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
-                className="flex items-center gap-1 text-stone-300 hover:text-white transition-colors cursor-pointer text-xs"
+                aria-haspopup="listbox"
+                aria-expanded={showCurrencyDropdown}
+                aria-label={language === 'ar' ? 'العملة' : 'Currency'}
+                className="flex h-7 items-center gap-1 rounded-md px-2 text-xs font-semibold text-stone-300 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
               >
                 <span>{currency}</span>
-                <ChevronDown className="w-3 h-3 opacity-70" />
+                <ChevronDown className={`w-3 h-3 opacity-70 transition-transform ${showCurrencyDropdown ? 'rotate-180' : ''}`} />
               </button>
 
               {showCurrencyDropdown && (
-                <div className="absolute top-full mt-1 end-0 bg-stone-900 border border-stone-800 rounded shadow-xl py-1 z-50 min-w-24">
+                <div
+                  role="listbox"
+                  className="animate-in zoom-in-95 absolute end-0 top-full z-50 mt-1.5 min-w-28 overflow-hidden rounded-xl border border-stone-200 bg-white p-1 shadow-xl ring-1 ring-stone-900/5"
+                >
                   {(['EGP', 'SAR', 'AED', 'USD'] as const).map((curr) => (
                     <button
                       key={curr}
+                      type="button"
+                      role="option"
+                      aria-selected={currency === curr}
                       onClick={() => {
                         setCurrency(curr);
                         setShowCurrencyDropdown(false);
                       }}
-                      className={`w-full text-start px-3 py-1 text-xs transition-colors hover:bg-stone-800 cursor-pointer ${
-                        currency === curr ? 'text-amber-400 font-semibold' : 'text-stone-300'
+                      className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-start text-xs transition-colors cursor-pointer ${
+                        currency === curr
+                          ? 'bg-stone-100 font-bold text-stone-950'
+                          : 'font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-950'
                       }`}
                     >
-                      {curr}
+                      <span>{curr}</span>
+                      {currency === curr && <Check className="h-3.5 w-3.5 text-amber-600" />}
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            <span className="text-stone-600">|</span>
+            <span aria-hidden="true" className="h-3.5 w-px bg-stone-700" />
 
-            <div className="flex items-center gap-1.5">
-              <Globe className="w-3 h-3 text-stone-400" />
-              <button
-                onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-                className="hover:text-amber-400 transition-colors font-medium cursor-pointer"
-              >
-                {language === 'ar' ? 'English (EN)' : 'العربية (AR)'}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
+              className="flex h-7 items-center gap-1.5 rounded-md px-2 text-xs font-semibold text-stone-300 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+            >
+              <Globe className="w-3.5 h-3.5 text-stone-400" />
+              <span>{language === 'ar' ? 'English' : 'العربية'}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -179,29 +223,60 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
           </form>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative">
+            <div className="relative" ref={accountRef}>
               <button
+                type="button"
                 onClick={() => user ? setShowAccountMenu(!showAccountMenu) : setShowAuthDialog(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-100 cursor-pointer"
+                className={`flex h-10 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition-colors cursor-pointer ${
+                  user
+                    ? 'border-stone-200 bg-stone-50 text-stone-800 hover:bg-stone-100'
+                    : 'border-stone-950 bg-stone-950 text-white hover:bg-stone-800'
+                }`}
                 aria-label={language === 'ar' ? 'الحساب' : 'Account'}
-                aria-expanded={showAccountMenu}
+                aria-haspopup={user ? 'menu' : 'dialog'}
+                aria-expanded={user ? showAccountMenu : showAuthDialog}
               >
-                <UserRound className="w-4 h-4" />
+                {user ? (
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-xs font-black text-stone-950">
+                    {(user.email?.[0] ?? 'V').toUpperCase()}
+                  </span>
+                ) : (
+                  <UserRound className="w-4 h-4" />
+                )}
                 <span className="hidden sm:inline">
                   {user ? (language === 'ar' ? 'حسابي' : 'Account') : (language === 'ar' ? 'دخول' : 'Sign in')}
                 </span>
               </button>
 
               {user && showAccountMenu && (
-                <div className="absolute end-0 top-full z-50 mt-2 w-64 rounded-xl border border-stone-200 bg-white p-3 shadow-xl">
-                  <p className="truncate px-2 py-1 text-xs font-semibold text-stone-600">{user.email}</p>
-                  <button
-                    onClick={() => void handleSignOut()}
-                    className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-start text-xs font-bold text-stone-700 transition hover:bg-stone-100 cursor-pointer"
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    {language === 'ar' ? 'تسجيل الخروج' : 'Sign out'}
-                  </button>
+                <div
+                  role="menu"
+                  className="animate-in zoom-in-95 absolute end-0 top-full z-50 mt-2 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-xl ring-1 ring-stone-900/5"
+                >
+                  <div className="flex items-center gap-3 border-b border-stone-100 bg-stone-50 px-4 py-3.5">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-stone-950 text-sm font-black text-white">
+                      {(user.email?.[0] ?? 'V').toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs text-stone-500">
+                        {isAdmin ? (language === 'ar' ? 'مدير المتجر' : 'Store admin') : (language === 'ar' ? 'مسجّل الدخول' : 'Signed in')}
+                      </p>
+                      <p className="truncate text-sm font-bold text-stone-900" dir="ltr" style={{ textAlign: 'start' }}>
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-1.5">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => void handleSignOut()}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-start text-sm font-semibold text-stone-700 transition-colors hover:bg-rose-50 hover:text-rose-700 cursor-pointer"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {language === 'ar' ? 'تسجيل الخروج' : 'Sign out'}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -209,7 +284,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
             {isAdmin && (
               <button
                 onClick={() => onNavigate(currentView === 'admin' ? 'storefront' : 'admin')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex h-10 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold transition-all cursor-pointer ${
                   currentView === 'admin'
                     ? 'bg-amber-100 text-amber-900 border border-amber-300'
                     : 'bg-stone-100 text-stone-700 hover:bg-stone-200 border border-stone-200'
@@ -232,12 +307,12 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
 
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative p-2.5 rounded-full text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
               aria-label={t('navCart')}
             >
               <ShoppingBag className="w-5 h-5" />
               {itemsCount > 0 && (
-                <span className="absolute -top-0.5 -end-0.5 bg-stone-900 text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                <span className="absolute -top-0.5 -end-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-black leading-none text-stone-950 ring-2 ring-white">
                   {itemsCount}
                 </span>
               )}
@@ -261,9 +336,35 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onSearc
         </div>
       </div>
 
+      {/* Mobile navigation (the desktop nav is hidden below md) */}
+      <nav
+        aria-label={language === 'ar' ? 'التنقل' : 'Primary'}
+        className="scrollbar-none flex gap-1 overflow-x-auto border-t border-stone-100 px-4 py-2 md:hidden"
+      >
+        {([
+          { view: 'storefront', label: t('navHome') },
+          { view: 'catalog', label: t('navCatalog') },
+          { view: 'order_tracking', label: t('navTrackOrder') }
+        ] as const).map((item) => (
+          <button
+            key={item.view}
+            type="button"
+            onClick={() => onNavigate(item.view)}
+            aria-current={currentView === item.view ? 'page' : undefined}
+            className={`h-9 shrink-0 rounded-full px-4 text-sm font-semibold transition-colors cursor-pointer ${
+              currentView === item.view
+                ? 'bg-stone-950 text-white'
+                : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
       {showAuthDialog && (
         <AuthDialog
-          onClose={() => setShowAuthDialog(false)}
+          onClose={closeAuthDialog}
           initialMode={passwordRecoveryPending ? 'update-password' : 'signin'}
         />
       )}
