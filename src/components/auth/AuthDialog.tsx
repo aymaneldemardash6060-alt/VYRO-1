@@ -125,11 +125,21 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ onClose, initialMode = '
   const BackIcon = isArabic ? ArrowRight : ArrowLeft;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-sm" onMouseDown={(event) => {
-      if (event.target === event.currentTarget) onClose();
-    }}>
-      <section role="dialog" aria-modal="true" aria-labelledby="vyro-auth-title" dir={direction} className="relative w-full max-w-md overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl">
-        <button type="button" onClick={onClose} aria-label={copy.close} className="absolute end-4 top-4 rounded-full p-2 text-stone-500 transition hover:bg-stone-100 hover:text-stone-900">
+    <div
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto overscroll-contain bg-stone-950/60 px-4 py-4 backdrop-blur-sm sm:items-center sm:py-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="vyro-auth-title"
+        dir={direction}
+        className="relative my-auto w-full max-w-md shrink-0 overflow-y-auto overscroll-contain rounded-3xl border border-stone-200 bg-white shadow-2xl"
+        style={{ maxHeight: 'calc(100dvh - 2rem)' }}
+      >
+        <button type="button" onClick={onClose} aria-label={copy.close} className="absolute end-4 top-4 z-10 rounded-full bg-white/90 p-2 text-stone-500 transition hover:bg-stone-100 hover:text-stone-900">
           <X className="h-4 w-4" />
         </button>
 
