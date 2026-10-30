@@ -143,7 +143,6 @@ export const translations = {
     tabOrders: 'الطلبات والتنفيذ',
     tabFinancials: 'التقارير المالية والأرباح',
     tabLogs: 'سجلات الربط والتدقيق',
-    tabMigrations: 'قواعد البيانات و Supabase',
 
     // Admin Overview
     metricRevenue: 'إجمالي المبيعات (GMV)',
@@ -379,7 +378,6 @@ export const translations = {
     tabOrders: 'Orders & Fulfillment',
     tabFinancials: 'Financials & Settlements',
     tabLogs: 'Integration Logs',
-    tabMigrations: 'Database & Supabase',
 
     // Admin Overview
     metricRevenue: 'Total GMV',

@@ -58,11 +58,13 @@ function MainApp() {
   return (
     <div className="min-h-screen flex flex-col bg-stone-50/30 text-stone-900 selection:bg-amber-400 selection:text-stone-950 font-sans">
       {/* Global Header */}
-      <Header
-        currentView={currentView}
-        onNavigate={(view) => setCurrentView(view)}
-        onSearch={handleSearch}
-      />
+      {currentView !== 'admin' && (
+        <Header
+          currentView={currentView}
+          onNavigate={(view) => setCurrentView(view)}
+          onSearch={handleSearch}
+        />
+      )}
 
       {/* Main View Router */}
       <main className="flex-1">
@@ -115,11 +117,11 @@ function MainApp() {
               <p className="mt-3 text-sm leading-relaxed text-stone-600">
                 {authConfigured
                   ? (language === 'ar'
-                    ? 'سجّل الدخول من زر الحساب. لا يمكن فتح لوحة الإدارة إلا لحساب مُنح صلاحية admin في Supabase.'
-                    : 'Sign in from the account button. Only a user assigned the admin role in Supabase can open this dashboard.')
+                    ? 'سجّل الدخول من زر الحساب. لا يمكن فتح لوحة الإدارة إلا لحساب مُنح صلاحية مدير المتجر.'
+                    : 'Sign in from the account button. Only an account with store administrator access can open this dashboard.')
                   : (language === 'ar'
-                    ? 'يلزم تهيئة Supabase Auth قبل استخدام لوحة الإدارة.'
-                    : 'Supabase Auth must be configured before the admin dashboard can be used.')}
+                    ? 'يلزم تهيئة خدمة تسجيل الدخول قبل استخدام لوحة الإدارة.'
+                    : 'The sign-in service must be configured before the admin dashboard can be used.')}
               </p>
               <button onClick={() => setCurrentView('storefront')} className="mt-6 rounded-xl bg-stone-950 px-5 py-3 text-sm font-bold text-white hover:bg-stone-800">
                 {language === 'ar' ? 'العودة للمتجر' : 'Back to storefront'}
@@ -130,10 +132,12 @@ function MainApp() {
       </main>
 
       {/* Cart Drawer Slide-Over */}
-      <CartDrawer
-        onNavigateToCheckout={() => setCurrentView('checkout')}
-        onExploreProducts={() => setCurrentView('catalog')}
-      />
+      {currentView !== 'admin' && (
+        <CartDrawer
+          onNavigateToCheckout={() => setCurrentView('checkout')}
+          onExploreProducts={() => setCurrentView('catalog')}
+        />
+      )}
 
       {/* Global Footer (shown on storefront views) */}
       {currentView !== 'admin' && (

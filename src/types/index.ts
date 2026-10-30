@@ -23,5 +23,4 @@ export type AdminTab =
   | 'products'
   | 'orders'
   | 'financials'
-  | 'logs'
-  | 'migrations';
+  | 'logs';
