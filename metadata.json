@@ -1,0 +1,6 @@
+{
+  "name": "VYRO Commerce — Multi-Supplier Platform",
+  "description": "Independent multi-supplier e-commerce platform with provider-agnostic integration architecture, dual-language Arabic/English support, and resilient fulfillment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

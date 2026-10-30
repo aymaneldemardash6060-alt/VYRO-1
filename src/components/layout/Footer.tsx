@@ -1,0 +1,150 @@
+import React from 'react';
+import { useLanguage } from '../../context/LanguageContext.tsx';
+import { ShieldCheck, Truck, RotateCcw, CreditCard, Layers } from 'lucide-react';
+import { ViewMode } from '../../types/index.ts';
+
+interface FooterProps {
+  onNavigate: (view: ViewMode) => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+  const { language, t } = useLanguage();
+
+  return (
+    <footer className="bg-stone-950 text-stone-300 pt-16 pb-12 border-t border-stone-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Trust Badges Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-12 border-b border-stone-800 text-stone-200">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-lg bg-stone-900 border border-stone-800 text-amber-400 shrink-0">
+              <CreditCard className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-white">{t('trustTitle1')}</h4>
+              <p className="text-xs text-stone-400 mt-1 leading-relaxed">{t('trustDesc1')}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-lg bg-stone-900 border border-stone-800 text-amber-400 shrink-0">
+              <Truck className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-white">{t('trustTitle2')}</h4>
+              <p className="text-xs text-stone-400 mt-1 leading-relaxed">{t('trustDesc2')}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-lg bg-stone-900 border border-stone-800 text-amber-400 shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-white">{t('trustTitle3')}</h4>
+              <p className="text-xs text-stone-400 mt-1 leading-relaxed">{t('trustDesc3')}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-lg bg-stone-900 border border-stone-800 text-amber-400 shrink-0">
+              <RotateCcw className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-white">{t('trustTitle4')}</h4>
+              <p className="text-xs text-stone-400 mt-1 leading-relaxed">{t('trustDesc4')}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Footer Links */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 py-12 border-b border-stone-800">
+          <div className="md:col-span-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="w-7 h-7 rounded bg-amber-500 text-stone-950 font-black flex items-center justify-center text-sm">
+                V
+              </span>
+              <span className="text-xl font-black text-white tracking-wider">VYRO COMMERCE</span>
+            </div>
+            <p className="text-xs text-stone-400 leading-relaxed max-w-sm">
+              {language === 'ar'
+                ? 'منصة تجارة إلكترونية مستقلة تماماً. تتيح لك التسوق من تشكيلات منتقاة وموثوقة مع ربط مرن ومتعدد الموردين (بما في ذلك تاجر والمستودعات الإقليمية) دون الاعتماد الحصري على أي منصة خارجية.'
+                : 'A fully independent commerce platform connecting verified regional suppliers and proprietary fulfillment hubs under a unified customer-first shopping experience.'}
+            </p>
+            <div className="flex items-center gap-2 text-xs text-stone-500">
+              <Layers className="w-4 h-4 text-emerald-400" />
+              <span>Multi-Supplier Provider-Agnostic Core v2.4</span>
+            </div>
+          </div>
+
+          <div className="md:col-span-2 space-y-3">
+            <h5 className="text-xs font-bold text-white uppercase tracking-wider">
+              {language === 'ar' ? 'التسوق' : 'Shop'}
+            </h5>
+            <ul className="space-y-2 text-xs text-stone-400">
+              <li>
+                <button onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">
+                  {t('allProductsTitle')}
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">
+                  {t('bestSellers')}
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('catalog')} className="hover:text-white transition-colors cursor-pointer">
+                  {t('featuredProducts')}
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <div className="md:col-span-2 space-y-3">
+            <h5 className="text-xs font-bold text-white uppercase tracking-wider">
+              {language === 'ar' ? 'خدمة العملاء' : 'Customer Care'}
+            </h5>
+            <ul className="space-y-2 text-xs text-stone-400">
+              <li>
+                <button onClick={() => onNavigate('order_tracking')} className="hover:text-white transition-colors cursor-pointer">
+                  {t('navTrackOrder')}
+                </button>
+              </li>
+              <li>
+                <span className="text-stone-500">{language === 'ar' ? 'سياسة الإرجاع 14 يوم' : '14-Day Return Policy'}</span>
+              </li>
+              <li>
+                <span className="text-stone-500">{language === 'ar' ? 'الشحن والدفع عند الاستلام' : 'COD & Shipping Rates'}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="md:col-span-3 space-y-3">
+            <h5 className="text-xs font-bold text-white uppercase tracking-wider">
+              {language === 'ar' ? 'بوابة الإدارة' : 'System & Operations'}
+            </h5>
+            <p className="text-xs text-stone-400">
+              {language === 'ar'
+                ? 'الوصول للوحة تحكم الموردين، تقارير الأرباح، وفحص استجابة الـ API.'
+                : 'Direct access to the supplier adapter registry, P&L reports, and manual queue dispatch.'}
+            </p>
+            <button
+              onClick={() => onNavigate('admin')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-stone-900 hover:bg-stone-800 border border-stone-700 text-xs text-stone-200 transition-colors cursor-pointer"
+            >
+              <span>{t('adminPortal')}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Copyright */}
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-500 gap-4">
+          <p>© 2026 VYRO Commerce Platform. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            <span>{language === 'ar' ? 'القاهرة · الرياض · دبي' : 'Cairo · Riyadh · Dubai'}</span>
+            <span>{t('currencyNote')}</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
