@@ -91,7 +91,15 @@ function getAdminClient(): SupabaseClient {
 function failDatabase(error: SupabaseErrorLike, operation: string): never {
   const safeCodes = new Set(['22023', '23503', '23505', '23514', 'P0001', 'P0002', '42501']);
   if (error.code && safeCodes.has(error.code) && error.message) throw new Error(error.message);
-  console.error(`[Vyro Supabase] ${operation} failed`, { code: error.code || 'unknown' });
+  // Keep database diagnostics server-side so production logs reveal the actual
+  // PostgREST failure without returning schema details to storefront visitors.
+  const diagnostic = {
+    code: error.code || 'unknown',
+    message: String(error.message || '').slice(0, 240),
+    details: String(error.details || '').slice(0, 240),
+    hint: String(error.hint || '').slice(0, 160)
+  };
+  console.error(`[Vyro Supabase] ${operation} failed`, diagnostic);
   throw new Error(`Could not ${operation}. Check the server configuration and try again.`);
 }
 
