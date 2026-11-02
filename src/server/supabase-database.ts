@@ -64,10 +64,10 @@ function createSupabaseClient(url: string, key: string): SupabaseClient {
 }
 
 function getPublicClient(): SupabaseClient {
-  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+  const url = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
   const key = (
-    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY ||
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || ''
   ).trim();
   if (!url || !key) throw new Error('Supabase public configuration is missing on the server.');
   if (!publicClientCache || publicClientCache.url !== url || publicClientCache.key !== key) {
@@ -77,7 +77,7 @@ function getPublicClient(): SupabaseClient {
 }
 
 function getAdminClient(): SupabaseClient {
-  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+  const url = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
   const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
   if (!url || !key) {
     throw new Error('Server-side database access is not configured. Add SUPABASE_SERVICE_ROLE_KEY to the server environment only.');
@@ -93,7 +93,7 @@ function failDatabase(error: SupabaseErrorLike, operation: string): never {
   if (error.code && safeCodes.has(error.code) && error.message) throw new Error(error.message);
   // Keep database diagnostics server-side so production logs reveal the actual
   // PostgREST failure without returning schema details to storefront visitors.
-  const configuredUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+  const configuredUrl = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
   let supabaseHost = 'missing';
   try { supabaseHost = new URL(configuredUrl).host; } catch { /* Keep host redacted when URL is invalid. */ }
   const diagnostic = {
