@@ -93,11 +93,17 @@ function failDatabase(error: SupabaseErrorLike, operation: string): never {
   if (error.code && safeCodes.has(error.code) && error.message) throw new Error(error.message);
   // Keep database diagnostics server-side so production logs reveal the actual
   // PostgREST failure without returning schema details to storefront visitors.
+  const configuredUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+  let supabaseHost = 'missing';
+  try { supabaseHost = new URL(configuredUrl).host; } catch { /* Keep host redacted when URL is invalid. */ }
   const diagnostic = {
     code: error.code || 'unknown',
     message: String(error.message || '').slice(0, 240),
     details: String(error.details || '').slice(0, 240),
-    hint: String(error.hint || '').slice(0, 160)
+    hint: String(error.hint || '').slice(0, 160),
+    supabaseHost,
+    urlSource: process.env.SUPABASE_URL ? 'SUPABASE_URL' : process.env.VITE_SUPABASE_URL ? 'VITE_SUPABASE_URL' : 'missing',
+    publicKeySource: process.env.SUPABASE_PUBLISHABLE_KEY ? 'SUPABASE_PUBLISHABLE_KEY' : process.env.SUPABASE_ANON_KEY ? 'SUPABASE_ANON_KEY' : process.env.SUPABASE_KEY ? 'SUPABASE_KEY' : process.env.VITE_SUPABASE_PUBLISHABLE_KEY ? 'VITE_SUPABASE_PUBLISHABLE_KEY' : process.env.VITE_SUPABASE_ANON_KEY ? 'VITE_SUPABASE_ANON_KEY' : 'missing'
   };
   console.error(`[Vyro Supabase] ${operation} failed`, diagnostic);
   throw new Error(`Could not ${operation}. Check the server configuration and try again.`);
