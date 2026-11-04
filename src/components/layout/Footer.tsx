@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
-import { ShieldCheck, Truck, RotateCcw, CreditCard, Layers } from 'lucide-react';
+import { ShieldCheck, Truck, RotateCcw, CreditCard, Layers, MessageCircle } from 'lucide-react';
 import { ViewMode } from '../../types/index.ts';
 
 interface FooterProps {
@@ -128,6 +128,24 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               <span>{language === 'ar' ? 'ضمان استرداد أموالك 100%' : '100% Buyer Protection'}</span>
             </div>
           </div>
+        </div>
+
+        {/* WhatsApp Contact */}
+        <div className="border-b border-stone-800 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div>
+            <h5 className="text-sm font-bold text-white">{language === 'ar' ? 'تواصل مع VYRO' : 'Contact VYRO'}</h5>
+            <p className="mt-1 text-xs text-stone-400">{language === 'ar' ? 'راسلنا مباشرة عبر واتساب' : 'Message us directly on WhatsApp'}</p>
+          </div>
+          <a
+            href="https://wa.me/201271061162"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={language === 'ar' ? 'التواصل مع VYRO عبر واتساب' : 'Contact VYRO on WhatsApp'}
+            className="inline-flex items-center gap-2 rounded-full border border-stone-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:border-emerald-500 hover:bg-stone-900"
+          >
+            <MessageCircle className="h-4 w-4 text-emerald-400" />
+            <span dir="ltr">01271061162</span>
+          </a>
         </div>
 
         {/* Bottom Copyright */}
