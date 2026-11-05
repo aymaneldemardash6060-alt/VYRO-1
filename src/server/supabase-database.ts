@@ -64,10 +64,13 @@ function createSupabaseClient(url: string, key: string): SupabaseClient {
 }
 
 function getPublicClient(): SupabaseClient {
-  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+  // The public storefront API must use the same Supabase project configured for
+  // the deployed frontend. Prefer the VITE_* values explicitly set for VYRO;
+  // marketplace integration variables may still point at a different project.
+  const url = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
   const key = (
-    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY ||
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || ''
   ).trim();
   if (!url || !key) throw new Error('Supabase public configuration is missing on the server.');
   if (!publicClientCache || publicClientCache.url !== url || publicClientCache.key !== key) {
