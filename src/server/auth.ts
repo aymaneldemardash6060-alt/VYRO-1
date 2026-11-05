@@ -1,15 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 import type { RequestHandler } from 'express';
 
+// Server-side variables take precedence so the URL, publishable key and
+// service-role key always come from the SAME Supabase project.
 const supabaseUrl = (
-  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
+  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 )?.trim();
 const supabasePublishableKey = (
-  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  process.env.VITE_SUPABASE_ANON_KEY ||
   process.env.SUPABASE_PUBLISHABLE_KEY ||
   process.env.SUPABASE_ANON_KEY ||
-  process.env.SUPABASE_KEY
+  process.env.SUPABASE_KEY ||
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  process.env.VITE_SUPABASE_ANON_KEY
 )?.trim();
 
 const authClient = supabaseUrl && supabasePublishableKey

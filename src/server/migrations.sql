@@ -417,7 +417,7 @@ BEGIN
     IF coalesce(v_item->>'productId', '') = '' THEN
       RAISE EXCEPTION 'Product ID is required.' USING ERRCODE = '22023';
     END IF;
-    v_quantity := (v_item->>'quantity')::integer;
+    v_quantity := coalesce((v_item->>'quantity')::integer, 0);
     IF v_quantity < 1 OR v_quantity > 20 THEN
       RAISE EXCEPTION 'Quantity must be between 1 and 20.' USING ERRCODE = '22023';
     END IF;
